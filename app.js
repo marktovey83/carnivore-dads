@@ -495,7 +495,8 @@ function clientFile(id) {
 }
 
 function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&", "<": "<", ">": ">", '"': """, "'": "&#39;" }[c]));
+  const map = { "&": "&#38;", "<": "&#60;", ">": "&#62;", '"': "&#34;", "'": "&#39;" };
+  return String(s).replace(/[&<>"']/g, (c) => map[c]);
 }
 function escapeAttr(s) {
   return escapeHtml(s || "");
@@ -588,8 +589,13 @@ function bind() {
 }
 
 function render() {
-  document.getElementById("root").innerHTML = route();
-  bind();
+  const root = document.getElementById("root");
+  try {
+    root.innerHTML = route();
+    bind();
+  } catch (err) {
+    root.innerHTML = '<div class="screen"><h2 class="display">LOAD FAILED.</h2><p class="lede">' + String(err) + "</p></div>";
+  }
 }
 
 window.addEventListener("hashchange", render);
