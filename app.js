@@ -76,20 +76,22 @@ function flag(code) {
     CA: '<rect width="60" height="30" fill="#fff"/><rect width="15" height="30" fill="#D80621"/><rect x="45" width="15" height="30" fill="#D80621"/><polygon fill="#D80621" points="30,6.5 31.4,10.3 35,9.6 34,12.6 37.6,11.2 36.2,14.2 39,15.6 36.2,17.2 37.6,20.2 34,18.8 35,21.8 31.4,21.1 30.8,25 29.2,25 28.6,21.1 25,21.8 26,18.8 22.4,20.2 23.8,17.2 21,15.6 23.8,14.2 22.4,11.2 26,12.6 25,9.6 28.6,10.3"/>',
     ZA: '<rect width="60" height="30" fill="#007749"/><path d="M0,0 L22,15 L0,30 Z" fill="#000"/><path d="M8,0 H60 V8 H18 Z" fill="#fff"/><path d="M8,22 H60 V30 H18 Z" fill="#fff"/><path d="M8,0 H60 V6 H20 Z" fill="#001489"/><path d="M8,24 H60 V30 H20 Z" fill="#E03C31"/>',
   };
-  return `<svg viewBox="0 0 60 30" width="42" height="21">${paths[code] || paths.AU}</svg>`;
+  return `<svg class="flag-svg" viewBox="0 0 60 30">${paths[code] || paths.AU}</svg>`;
 }
 
 function lockup(compact) {
+  // Horizontal: flag plate, CD plate, ember rule, wordmark, with the slogan
+  // beside the mark rather than stacked under the whole thing.
   return `
-    <div class="lockup">
+    <div class="lockup${compact ? " compact" : ""}">
       <div class="plates">
-        <div class="flag-plate">${flag(state.country)}</div>
-        <div class="cd-plate"><span>CD</span></div>
+        <span class="flag-plate">${flag(state.country)}</span>
+        <span class="cd-plate"><span>CD</span></span>
       </div>
-      <div class="ember-rule"></div>
+      <span class="ember-rule"></span>
       <div class="wordmark">
-        <h1 style="font-size:${compact ? 22 : 28}px">CARNIVORE DADS</h1>
-        ${compact ? "" : '<p class="etk">Energy through knowledge</p>'}
+        <strong>CARNIVORE<br />DADS</strong>
+        <span class="etk">Energy through knowledge</span>
       </div>
     </div>`;
 }
@@ -391,10 +393,10 @@ function account() {
     <h2 class="display">ACCOUNT.</h2>
     <p class="lede">What the app knows about you. It is kept on this phone and nowhere else.</p>
     <div class="card">
-      <p class="field" style="margin-top:0">Trade</p><p>${escapeHtml(state.occupation || "Not set")}</p>
-      <p class="field">Height</p><p>${escapeHtml(state.height || "Not set")} cm</p>
-      <p class="field">Weight</p><p>${escapeHtml(state.weight || "Not set")} kg</p>
-      <p class="field">Country</p><p>${name}</p>
+      <div class="file-row"><span>Trade</span><b>${escapeHtml(state.occupation || "Not set")}</b></div>
+      <div class="file-row"><span>Height</span><b>${escapeHtml(state.height || "--")} cm</b></div>
+      <div class="file-row"><span>Weight</span><b>${escapeHtml(state.weight || "--")} kg</b></div>
+      <div class="file-row"><span>Country</span><b>${name}</b></div>
       <p class="fine">Your trade and numbers come from Start your reset. Your country is set on the login screen.</p>
     </div>
     <div class="split" style="margin-top:22px"><span class="field" style="margin:0">Delivery</span><span class="badge">WHEN THERE IS SOMETHING TO POST</span></div>
