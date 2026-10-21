@@ -80,17 +80,17 @@ function flag(code) {
 }
 
 function lockup(compact) {
-  // Horizontal: flag plate, CD plate, ember rule, wordmark, with the slogan
-  // beside the mark rather than stacked under the whole thing.
+  // Plates on top, flag then CD. The wordmark underneath them, with the ember
+  // rule and the slogan beside it on the same line.
   return `
     <div class="lockup${compact ? " compact" : ""}">
       <div class="plates">
         <span class="flag-plate">${flag(state.country)}</span>
         <span class="cd-plate"><span>CD</span></span>
       </div>
-      <span class="ember-rule"></span>
-      <div class="wordmark">
-        <strong>CARNIVORE<br />DADS</strong>
+      <div class="mark-line">
+        <strong>CARNIVORE DADS</strong>
+        <span class="ember-rule"></span>
         <span class="etk">Energy through knowledge</span>
       </div>
     </div>`;

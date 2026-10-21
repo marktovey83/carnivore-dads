@@ -68,13 +68,13 @@ a:hover { color: var(--ember-hot); }
 }
 .screen.with-tabs { padding-bottom: calc(118px + env(safe-area-inset-bottom)); }
 
-/* The lockup: flag plate, CD plate, ember rule, wordmark, left to right,
-   with the slogan beside the mark. The plates are machined rather than flat:
-   a raking gradient, a lit top edge, rounded corners and four rivets. A flat
-   box with a 1px border is what made this read cheap. */
-.lockup { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 6px 0 24px; }
-.lockup.left { justify-content: flex-start; }
-.plates { display: flex; align-items: center; gap: 8px; }
+/* The lockup: the plates on top, flag then CD, then the wordmark underneath
+   with the ember rule and the slogan beside it. The plates are machined
+   rather than flat: a raking gradient, a lit top edge, a 4px radius and four
+   rivets. A solid fill with a 1px border is what made this read cheap. */
+.lockup { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 6px 0 24px; }
+.lockup.left { align-items: flex-start; }
+.plates { display: flex; align-items: center; gap: 10px; }
 .flag-plate, .cd-plate {
   position: relative;
   height: 52px;
@@ -85,7 +85,7 @@ a:hover { color: var(--ember-hot); }
   box-shadow: inset 0 1px #ffffff12;
 }
 .flag-plate { min-width: 64px; }
-.cd-plate { min-width: 48px; }
+.cd-plate { min-width: 52px; }
 /* Four rivets: two drawn, each cloned to the bottom by its own shadow. */
 .flag-plate::before, .flag-plate::after,
 .cd-plate::before, .cd-plate::after {
@@ -98,21 +98,26 @@ a:hover { color: var(--ember-hot); }
 .cd-plate span {
   font-family: Anton, "Arial Narrow", sans-serif;
   color: var(--bone);
-  font-size: 22px;
+  font-size: 24px;
   letter-spacing: 0.02em;
   line-height: 1;
 }
-.ember-rule { width: 3px; height: 52px; background: var(--ember); border-radius: 1px; flex: none; }
-.wordmark { text-align: left; }
-.wordmark strong {
-  display: block;
+
+/* Wordmark, rule and slogan, all on one line under the plates. */
+/* Wrap is the safety net, not the plan. With Anton the name and the slogan
+   sit side by side down to 320px; if the font has not arrived the fallback is
+   far wider, and the slogan drops under the name rather than being cut off. */
+.mark-line { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 10px; max-width: 100%; }
+.mark-line strong {
   font-family: Anton, "Arial Narrow", sans-serif;
   font-weight: 400;
-  font-size: 27px;
-  line-height: 0.92;
-  letter-spacing: 0.01em;
+  font-size: clamp(18px, 6.4vw, 26px);
+  line-height: 1;
+  letter-spacing: 0.02em;
   color: var(--bone);
+  white-space: nowrap;
 }
+.ember-rule { width: 2px; align-self: stretch; min-height: 26px; background: var(--ember); border-radius: 1px; flex: none; }
 .display {
   font-family: Anton, "Arial Narrow", sans-serif;
   font-weight: 400;
@@ -122,23 +127,23 @@ a:hover { color: var(--ember-hot); }
 }
 
 /* Compact, for the screens that carry a tab bar. */
-.lockup.compact { gap: 10px; margin: 2px 0 18px; }
-.lockup.compact .flag-plate, .lockup.compact .cd-plate { height: 36px; }
-.lockup.compact .flag-plate { min-width: 46px; }
-.lockup.compact .cd-plate { min-width: 34px; }
+.lockup.compact { gap: 8px; margin: 2px 0 18px; }
+.lockup.compact .flag-plate, .lockup.compact .cd-plate { height: 34px; }
+.lockup.compact .flag-plate { min-width: 44px; }
+.lockup.compact .cd-plate { min-width: 36px; }
 .lockup.compact .flag-plate::before, .lockup.compact .flag-plate::after,
 .lockup.compact .cd-plate::before, .lockup.compact .cd-plate::after {
-  top: 4px; width: 3px; height: 3px; box-shadow: 0 25px #777;
+  top: 4px; width: 3px; height: 3px; box-shadow: 0 23px #777;
 }
 .lockup.compact .cd-plate span { font-size: 16px; }
-.lockup.compact .ember-rule { height: 36px; width: 2px; }
-.lockup.compact .wordmark strong { font-size: 18px; }
+.lockup.compact .mark-line strong { font-size: clamp(14px, 4.4vw, 18px); }
+.lockup.compact .ember-rule { min-height: 17px; }
 .etk {
   display: block;
-  margin: 5px 0 0;
+  margin: 0;
   color: var(--ember);
-  font-size: 9.5px;
-  letter-spacing: 0.17em;
+  font-size: clamp(6.5px, 2.3vw, 9.5px);
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -392,14 +397,15 @@ a.btn.ghost { color: var(--bone); }
 .flag-plate .flag-svg { display: block; width: 50px; height: 25px; border-radius: 1px; }
 .lockup.compact .flag-plate .flag-svg { width: 34px; height: 17px; }
 
-.lockup.compact .etk { font-size: 8px; letter-spacing: 0.14em; margin-top: 3px; }
+.lockup.compact .etk { font-size: clamp(6px, 1.9vw, 8px); letter-spacing: 0.1em; }
 
 /* A 320px phone is the floor. The wordmark and slogan shrink before the
    plates do, because the plates are the part that has to stay legible. */
+/* 320px is the floor. The slogan is the part that gives: it shrinks and, if
+   it still will not sit beside the name, it drops under it rather than
+   pushing the mark off the screen. */
 @media (max-width: 380px) {
   .lockup { gap: 10px; }
-  .wordmark strong { font-size: 23px; }
-  .etk { font-size: 8.5px; letter-spacing: 0.13em; }
-  .lockup.compact .wordmark strong { font-size: 16px; }
-  .lockup.compact .etk { font-size: 7px; letter-spacing: 0.1em; }
+  .mark-line { gap: 8px; }
+  .etk { letter-spacing: 0.1em; }
 }
