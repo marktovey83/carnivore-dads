@@ -102,7 +102,7 @@ function tabs(active) {
 function phone(inner, tab) {
   return `
     <div class="desk">
-      <div class="desk-bar"><span><strong>Carnivore Dads</strong> · factory reset</span><a href="#/admin">Admin</a></div>
+      <div class="desk-bar"><span><strong>Carnivore Dads</strong> · factory reset</span><span class="desk-links"><a href="#/">Log in</a><a href="#/admin">Admin</a></span></div>
       <div class="phone">
         <div class="screen ${tab ? "with-tabs" : ""}">
           <a href="#/app/my-body">${lockup(!!tab)}</a>
