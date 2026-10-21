@@ -116,7 +116,8 @@ function login() {
     <input id="email" value="${escapeAttr(state.email)}" placeholder="you@email.com" />
     <label class="field">Password</label>
     <input id="password" type="password" />
-    <p class="fine" style="margin-top:10px"><button class="linkish">Forgot password</button></p>
+    <p class="fine" style="margin-top:10px"><button class="linkish" data-act="forgot">Forgot password</button></p>
+    <p class="fine" id="signin-note" role="alert" hidden style="margin-top:12px;color:#C9963A;line-height:1.45"></p>
     <button class="btn" style="margin-top:18px" data-act="signin">SIGN IN</button>
     <p class="fine" style="margin:22px 0 8px;letter-spacing:.18em">NEW HERE</p>
     <a class="btn ghost" href="#/reset">START YOUR RESET</a>
@@ -133,10 +134,7 @@ function login() {
 function reset() {
   return phone(`
     <h2 class="display">START YOUR RESET.</h2>
-    <p class="lede">Your numbers, your trade, and the way in. Phase 1 opens the moment this is done.</p>
-    <div class="price">$25 <span>/ WEEK</span></div>
-    <p class="fine">Billed weekly while you are in the phases. You move up when your data says so, not when a calendar does.</p>
-    <p class="fine">[Cancellation terms]</p>
+    <p class="lede">Your numbers and your trade. Phase 1 opens the moment this is done.</p>
     <p class="field">Your numbers</p>
     <label class="field">Email</label><input id="email" value="${escapeAttr(state.email)}" placeholder="you@email.com" />
     <label class="field">Occupation</label>
@@ -152,46 +150,14 @@ function reset() {
       <div><label class="field">State</label><input id="region" value="${escapeAttr(state.address.state)}" /></div>
       <div><label class="field">Postcode</label><input id="postcode" value="${escapeAttr(state.address.postcode)}" /></div>
     </div>
-    <p class="fine">Where your kit gets delivered, and what your account is tied to.</p>
+    <p class="fine">Where your kit gets delivered.</p>
     <label class="fine" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px">
       <input id="localAds" type="checkbox" ${state.address.localAds ? "checked" : ""} style="width:18px" />
       Show me gyms and butchers near me. Off by default.
     </label>
-    <p class="field" style="margin-top:22px">Payment</p>
-    <div class="row-btns"><button class="btn ghost">Apple Pay</button><button class="btn ghost">Google Pay</button></div>
-    <p class="fine" style="margin:12px 0">OR CARD</p>
-    <label class="field">Card number</label><input placeholder="•••• •••• •••• ••••" />
-    <div class="stat-grid">
-      <div><label class="field">Expiry</label><input placeholder="MM/YY" /></div>
-      <div><label class="field">CVC</label><input placeholder="123" /></div>
-    </div>
-    <button class="btn" style="margin-top:20px" data-act="pay">START MY RESET — $25 / WEEK</button>
+    <button class="btn" style="margin-top:20px" data-act="start">OPEN PHASE 1</button>
     <a class="btn ghost" href="#/app/shop" style="margin-top:10px;display:block">GO TO THE SHOP</a>
     ${legal()}
-  `);
-}
-
-function checkEmail() {
-  return phone(`
-    <h2 class="display">CHECK YOUR EMAIL.</h2>
-    <p class="lede">Payment is in. We have sent a link to <b>${escapeHtml(state.email || "you@email.com")}</b>. Open it, set your password, and Phase 1 is yours.</p>
-    <p class="badge">WAITING ON YOU</p>
-    <a class="btn" href="#/set-password" style="margin-top:22px;display:block">OPEN MAIL APP</a>
-    <p class="fine" style="margin-top:16px">Nothing there? <button class="linkish">Send it again</button></p>
-    <p class="fine">Check your junk folder before you send it again.</p>
-  `);
-}
-
-function setPassword() {
-  return phone(`
-    <h2 class="display">SET YOUR PASSWORD.</h2>
-    <p class="lede">Last step. Then Phase 1 opens.</p>
-    <p class="fine">${escapeHtml(state.email || "you@email.com")}</p>
-    <label class="field">New password</label><input id="pw1" type="password" />
-    <label class="field">Confirm password</label><input id="pw2" type="password" />
-    <p class="fine">At least 10 characters · One number · Both passwords match</p>
-    <button class="btn" style="margin-top:18px" data-act="open-phase">OPEN PHASE 1</button>
-    <p class="legal">This link is good for [link expiry]. After that, ask for a new one.</p>
   `);
 }
 
@@ -429,7 +395,7 @@ function adminLogin() {
         ${lockup()}
         <p class="etk" style="text-align:center">Staff access · client tracking</p>
         <label class="field">Work email</label><input value="mark@carnivoredads.com" />
-        <label class="field">Password</label><input type="password" value="password12" />
+        <label class="field">Password</label><input type="password" />
         <label class="field">6-digit code from your authenticator</label><input placeholder="000000" />
         <a class="btn" href="#/admin/clients" style="margin-top:18px;display:block">SIGN IN</a>
         <p class="legal">Admin accounts are invite-only. Every sign-in and every client file opened is logged.</p>
@@ -507,8 +473,6 @@ function route() {
   const parts = hash.split("/").filter(Boolean);
   if (hash === "/" || hash === "") return login();
   if (hash === "/reset") return reset();
-  if (hash === "/check-email") return checkEmail();
-  if (hash === "/set-password") return setPassword();
   if (hash === "/app/phase-1") return phase1();
   if (hash === "/app/factory") return factory();
   if (hash === "/app/scan") return scan();
@@ -541,15 +505,31 @@ function bind() {
       save({ owned: { ...state.owned, [id]: !state.owned[id] } });
     };
   });
-  const act = document.querySelector("[data-act]");
-  if (!act) return;
-  act.onclick = () => {
+  // querySelector, singular, meant only the first action button on a screen
+  // was ever wired up. The login has two.
+  document.querySelectorAll("[data-act]").forEach((act) => {
+    act.onclick = () => {
     const kind = act.getAttribute("data-act");
     if (kind === "signin") {
-      save({ email: val("email") });
-      location.hash = "#/app/phase-1";
+      // There are no accounts yet, so this does not wave anybody through.
+      // Saying "welcome back" when nothing was checked would leave a man
+      // believing an account was holding his record. It is on this phone.
+      const note = document.getElementById("signin-note");
+      if (note) {
+        note.textContent =
+          "There are no accounts yet. Your record is kept on this phone, so there is nothing to sign in to. Tap START YOUR RESET to open Phase 1.";
+        note.hidden = false;
+      }
     }
-    if (kind === "pay") {
+    if (kind === "forgot") {
+      const note = document.getElementById("signin-note");
+      if (note) {
+        note.textContent =
+          "No accounts yet, so there is no password to reset. Nothing of yours is lost: your record is on this phone.";
+        note.hidden = false;
+      }
+    }
+    if (kind === "start") {
       save({
         email: val("email") || "you@email.com",
         occupation: val("occupation"),
@@ -564,12 +544,6 @@ function bind() {
         },
         scan: { ...state.scan, height: val("height"), weight: val("weight") },
       });
-      location.hash = "#/check-email";
-    }
-    if (kind === "open-phase") {
-      const a = val("pw1");
-      const b = val("pw2");
-      if (a.length < 10 || !/\d/.test(a) || a !== b) return;
       location.hash = "#/app/phase-1";
     }
     if (kind === "save-scan") {
@@ -585,7 +559,8 @@ function bind() {
       if (!mmol) return;
       save({ ketones: [...state.ketones, { mmol, at: Date.now() }] });
     }
-  };
+    };
+  });
 }
 
 function render() {

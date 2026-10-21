@@ -18,15 +18,13 @@ React build of the Carnivore Dads app — a five-phase men's health program for 
 
 Dad flow
 
-1. Login (returning dad + country plate)
-2. Start your reset ($25/week, numbers, address, payment)
-3. Check your email
-4. Set your password
-5. Phase 1 kit list (knowledge-gated)
-6. Your factory (parametric silhouette from scan numbers)
-7. Body scan entry
-8. Baja salt lesson
-9. Tabs: Videos · Ketones · Shop · Account
+1. Login (returning dad + country plate). Sign in does not work yet and says so.
+2. Start your reset (numbers, trade, address)
+3. Phase 1 kit list (knowledge-gated)
+4. Your factory (parametric silhouette from scan numbers)
+5. Body scan entry
+6. Baja salt lesson
+7. Tabs: Videos · Ketones · Shop · Account
 
 Admin
 
@@ -56,6 +54,24 @@ Hash routes:
 - `#/reset` Start your reset
 - `#/app/phase-1` Phase 1
 - `#/admin` Staff
+
+## Payment and accounts are out, for now
+
+The $25 a week screen, the card fields, "check your email" and "set your
+password" have been taken out. There is no payment provider and no auth
+service behind any of it, and a form that takes a card number or a password
+and then says it worked is worse than not having one: it leaves a man
+believing an account is holding his record.
+
+Sign in refuses, in a sentence that says why and where his record actually
+is. START YOUR RESET collects his numbers and his trade and opens Phase 1
+straight away. His record is on the phone.
+
+This is also what the production build in `rjohnsenwhatsnext-bit/Carnivore-Dad`
+does, so these screens now port across without an argument.
+
+Putting payment back is a deliberate job: a provider, a real account, and the
+cancellation terms that are still a placeholder.
 
 React source is in `src/` for a later Vite build. The live app is the root static files so you can view it on GitHub immediately.
 
