@@ -96,13 +96,13 @@ function lockup(compact) {
 
 function tabs(active) {
   const item = (href, label, key) => `<a href="${href}" class="${active === key ? "on" : ""}">${label}</a>`;
-  return `<nav class="tabs">${item("#/app/videos", "Videos", "videos")}${item("#/app/ketones", "Ketones", "ketones")}${item("#/app/my-body", "My body", "home")}${item("#/app/shop", "Shop", "shop")}</nav>`;
+  return `<nav class="tabs">${item("#/app/videos", "Videos", "videos")}${item("#/app/ketones", "Ketones", "ketones")}${item("#/app/my-body", "My body", "home")}${item("#/app/shop", "Shop", "shop")}${item("#/app/account", "Account", "account")}</nav>`;
 }
 
 function phone(inner, tab) {
   return `
     <div class="desk">
-      <div class="desk-bar"><span><strong>Carnivore Dads</strong><span class="desk-sub"> · factory reset</span></span><span class="desk-links"><a href="#/">Log in</a><a href="#/admin">Admin</a></span></div>
+      <div class="desk-bar"><span><strong>Carnivore Dads</strong><span class="desk-sub"> · factory reset</span></span><span class="desk-links"><a href="#/admin">Admin</a></span></div>
       <div class="phone">
         <div class="screen ${tab ? "with-tabs" : ""}">
           <a href="#/app/my-body">${lockup(!!tab)}</a>
@@ -137,9 +137,7 @@ function login() {
 function reset() {
   return phone(`
     <h2 class="display">START YOUR RESET.</h2>
-    <p class="lede">Your numbers and your trade. Phase 1 opens the moment this is done.</p>
-    <p class="field">Your numbers</p>
-    <label class="field">Email</label><input id="email" value="${escapeAttr(state.email)}" placeholder="you@email.com" />
+    <p class="lede">Three things, then Phase 1 opens. Everything else can wait.</p>
     <label class="field">Occupation</label>
     <select id="occupation">${["", ...TRADES].map((t) => `<option ${t === state.occupation ? "selected" : ""}>${t || "Choose your trade"}</option>`).join("")}</select>
     <p class="fine">Not small talk. This is the language every video and lesson gets written in.</p>
@@ -147,26 +145,12 @@ function reset() {
       <div><label class="field">Height (cm)</label><input id="height" value="${escapeAttr(state.height)}" /></div>
       <div><label class="field">Weight (kg)</label><input id="weight" value="${escapeAttr(state.weight)}" /></div>
     </div>
-    <label class="field">Street address</label><input id="street" value="${escapeAttr(state.address.street)}" />
-    <label class="field">Suburb</label><input id="suburb" value="${escapeAttr(state.address.suburb)}" />
-    <div class="stat-grid">
-      <div><label class="field">State</label><input id="region" value="${escapeAttr(state.address.state)}" /></div>
-      <div><label class="field">Postcode</label><input id="postcode" value="${escapeAttr(state.address.postcode)}" /></div>
-    </div>
-    <p class="fine">Where your kit gets delivered.</p>
-    <label class="fine" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px">
-      <input id="localAds" type="checkbox" ${state.address.localAds ? "checked" : ""} style="width:18px" />
-      Show me gyms and butchers near me. Off by default.
-    </label>
-    <button class="btn" style="margin-top:20px" data-act="start">OPEN PHASE 1</button>
-    <a class="btn ghost" href="#/app/shop" style="margin-top:10px;display:block">GO TO THE SHOP</a>
+    <button class="btn" style="margin-top:22px" data-act="start">OPEN PHASE 1</button>
+    <p class="fine" style="margin-top:14px">Your delivery address and the rest of your details live in Account, and only matter when there is something to post you.</p>
     ${legal()}
   `);
 }
 
-/* The phase picker every hub tab opens on, as the production build does it.
-   My body, Ketones and Videos are the same shell with different contents, so
-   the phase a man is in means the same thing on all three. */
 function phaseShell(title, tab, phase, body) {
   const current = Number(state.phase) || 1;
   if (phase === null) {
@@ -399,6 +383,38 @@ function shop() {
   `, "shop");
 }
 
+function account() {
+  const a = state.address || {};
+  const name = COUNTRIES.find((c) => c[0] === state.country)?.[1];
+  return phone(`
+    <p class="phase-tag">YOUR FILE</p>
+    <h2 class="display">ACCOUNT.</h2>
+    <p class="lede">What the app knows about you. It is kept on this phone and nowhere else.</p>
+    <div class="card">
+      <p class="field" style="margin-top:0">Trade</p><p>${escapeHtml(state.occupation || "Not set")}</p>
+      <p class="field">Height</p><p>${escapeHtml(state.height || "Not set")} cm</p>
+      <p class="field">Weight</p><p>${escapeHtml(state.weight || "Not set")} kg</p>
+      <p class="field">Country</p><p>${name}</p>
+      <p class="fine">Your trade and numbers come from Start your reset. Your country is set on the login screen.</p>
+    </div>
+    <div class="split" style="margin-top:22px"><span class="field" style="margin:0">Delivery</span><span class="badge">WHEN THERE IS SOMETHING TO POST</span></div>
+    <label class="field">Email</label><input id="email" value="${escapeAttr(state.email)}" placeholder="you@email.com" />
+    <label class="field">Street address</label><input id="street" value="${escapeAttr(a.street || "")}" />
+    <label class="field">Suburb</label><input id="suburb" value="${escapeAttr(a.suburb || "")}" />
+    <div class="stat-grid">
+      <div><label class="field">State</label><input id="region" value="${escapeAttr(a.state || "")}" /></div>
+      <div><label class="field">Postcode</label><input id="postcode" value="${escapeAttr(a.postcode || "")}" /></div>
+    </div>
+    <label class="fine" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px">
+      <input id="localAds" type="checkbox" ${a.localAds ? "checked" : ""} style="width:18px" />
+      Show me gyms and butchers near me. Off by default.
+    </label>
+    <button class="btn" style="margin-top:18px" data-act="save-account">SAVE DETAILS</button>
+    <a class="btn ghost" href="#/" style="margin-top:10px;display:block">BACK TO LOG IN</a>
+    ${legal()}
+  `, "account");
+}
+
 function adminTop() {
   return `
     <header class="admin-top">
@@ -517,6 +533,7 @@ function route() {
   if (hash === "/app/scan") return scan();
   if (hash === "/app/kit/baja-salt") return baja();
   if (hash === "/app/shop") return shop();
+  if (hash === "/app/account") return account();
   if (hash === "/admin") return adminLogin();
   if (hash === "/admin/clients") return clients();
   if (parts[0] === "admin" && parts[1] === "clients" && parts[2]) return clientFile(parts[2]);
@@ -565,10 +582,16 @@ function bind() {
     const kind = act.getAttribute("data-act");
     if (kind === "start") {
       save({
-        email: val("email") || "you@email.com",
         occupation: val("occupation"),
         height: val("height"),
         weight: val("weight"),
+        scan: { ...state.scan, height: val("height"), weight: val("weight") },
+      });
+      location.hash = "#/app/my-body/1";
+    }
+    if (kind === "save-account") {
+      save({
+        email: val("email"),
         address: {
           street: val("street"),
           suburb: val("suburb"),
@@ -576,9 +599,7 @@ function bind() {
           postcode: val("postcode"),
           localAds: document.getElementById("localAds")?.checked || false,
         },
-        scan: { ...state.scan, height: val("height"), weight: val("weight") },
       });
-      location.hash = "#/app/phase-1";
     }
     if (kind === "save-scan") {
       const scan = { ...state.scan };

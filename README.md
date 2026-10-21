@@ -19,12 +19,12 @@ React build of the Carnivore Dads app — a five-phase men's health program for 
 Dad flow
 
 1. Login: the lockup, the slogan, LOG IN or REGISTER, and the country plate
-2. Start your reset (numbers, trade, address)
+2. Start your reset: trade, height, weight. Nothing else.
 3. My body: the phase picker, then Phase 1's kit, bloods, scan and lessons
 4. Your factory (parametric silhouette from scan numbers)
 5. Body scan entry
 6. Baja salt lesson
-7. Tabs: Videos · Ketones · My body · Shop
+7. Tabs: Videos · Ketones · My body · Shop · Account
 
 ## The hub, after the production build
 
@@ -37,8 +37,12 @@ The CD lockup is the way home to the picker.
 `#/app/my-body` opens the picker, `#/app/my-body/1` opens that phase. Same for
 `#/app/ketones` and `#/app/videos`.
 
-The Account tab is gone, along with the craving screens that were never built
-here. There is no account to show while sign in refuses.
+Account holds what Start your reset no longer asks for: email, delivery
+address and the local gyms and butchers consent box, off by default. None of
+it is needed to begin, so none of it is in the way of beginning. It is also
+the way back to the login.
+
+The craving screens were never built here, so there was nothing to remove.
 
 Admin
 
@@ -61,6 +65,11 @@ Taken from the later README notes where they disagree with older docs:
 Still placeholders: cancellation terms, password-link expiry.
 
 Open `index.html` or the GitHub Pages URL. No build step required.
+
+The Pages workflow stamps `?v=` on the script and stylesheet with the commit
+SHA at deploy time. Before that it was a hardcoded date, so a push landed at
+the same URL and browsers kept serving the old files. If a change does not
+appear on the live site, that is the first thing to check.
 
 Hash routes:
 

@@ -27,6 +27,14 @@ jobs:
           mkdir -p _site
           cp index.html styles.css app.js _site/
           cp -r docs _site/docs
+          # Stamp the cache-busting query with this commit, so a push always
+          # reaches a phone that already has the old files. Doing it by hand
+          # meant it got forgotten, and the site silently served a stale
+          # app.js for weeks.
+          VERSION=$(echo "$GITHUB_SHA" | cut -c1-7)
+          sed -i "s/?v=[0-9A-Za-z]\{1,\}/?v=$VERSION/g" _site/index.html
+          echo "Stamped assets as ?v=$VERSION"
+          grep -o '?v=[0-9A-Za-z]*' _site/index.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

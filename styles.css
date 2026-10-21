@@ -199,7 +199,7 @@ a.btn.ghost { color: var(--bone); }
   background: #101010;
   border-top: 1px solid #2b2b2b;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
 }
 .tabs a, .tabs button {
   background: none; border: 0; color: #8a8374;
