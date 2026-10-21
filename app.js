@@ -18,6 +18,13 @@ const KIT = [
   { id: "gym", name: "Gym membership" },
   { id: "scan", name: "Body scan", href: "#/app/scan" },
 ];
+const PHASE_NAMES = ["Knowing your body", "The dad bod", "The liver", "Advanced macros", "Graduate"];
+const LESSONS = [
+  ["Your ketone meter", "Your smart watch", "Baja salt", "Fish oil", "Magnesium glycinate", "Gym and body scan", "Gut health", "Intro macros"],
+  ["The crash", "Basic macros", "Zone training", "Alcohol", "Visceral fat"],
+  ["The processing station", "Intro fasting", "Zones continued"],
+  ["Timing and amounts", "When carbs come back", "Your scan as a work list", "Structured workouts"],
+];
 const SHOP = [
   ["Baja Gold sea salt", 18],
   ["Fish oil", 32],
@@ -42,6 +49,7 @@ const defaults = {
   owned: {},
   scan: { height: "180", weight: "95", bodyFat: "28", visceral: "12" },
   ketones: [],
+  phase: 1,
 };
 
 function load() {
@@ -88,7 +96,7 @@ function lockup(compact) {
 
 function tabs(active) {
   const item = (href, label, key) => `<a href="${href}" class="${active === key ? "on" : ""}">${label}</a>`;
-  return `<nav class="tabs">${item("#/app/videos", "Videos", "videos")}${item("#/app/ketones", "Ketones", "ketones")}${item("#/app/shop", "Shop", "shop")}${item("#/app/account", "Account", "account")}</nav>`;
+  return `<nav class="tabs">${item("#/app/videos", "Videos", "videos")}${item("#/app/ketones", "Ketones", "ketones")}${item("#/app/my-body", "My body", "home")}${item("#/app/shop", "Shop", "shop")}</nav>`;
 }
 
 function phone(inner, tab) {
@@ -97,7 +105,7 @@ function phone(inner, tab) {
       <div class="desk-bar"><span><strong>Carnivore Dads</strong> · factory reset</span><a href="#/admin">Admin</a></div>
       <div class="phone">
         <div class="screen ${tab ? "with-tabs" : ""}">
-          <a href="#/app/phase-1">${lockup(!!tab)}</a>
+          <a href="#/app/my-body">${lockup(!!tab)}</a>
           ${inner}
         </div>
         ${tab ? tabs(tab) : ""}
@@ -161,7 +169,61 @@ function reset() {
   `);
 }
 
-function phase1() {
+/* The phase picker every hub tab opens on, as the production build does it.
+   My body, Ketones and Videos are the same shell with different contents, so
+   the phase a man is in means the same thing on all three. */
+function phaseShell(title, tab, phase, body) {
+  const current = Number(state.phase) || 1;
+  if (phase === null) {
+    const rows = PHASE_NAMES.map((name, i) => {
+      const n = i + 1;
+      const locked = n > current;
+      const mark = locked ? "LOCKED" : n === current ? "YOU&rsquo;RE HERE" : "DONE";
+      const note = noteFor(title, n, locked);
+      return `
+        <button class="phase-row ${n === current ? "is-current" : ""}" ${locked ? 'aria-disabled="true" data-locked="' + n + '"' : 'data-phase="' + n + '"'}>
+          <span>
+            <small>${mark}</small>
+            <b>${n === 5 ? "Graduate" : "Phase " + n}</b>
+            ${n === 5 ? "" : `<em>${name}</em>`}
+            ${note ? `<em class="phase-note">${note}</em>` : ""}
+          </span>
+          <span aria-hidden="true">${locked ? '<svg width="18" height="20" viewBox="0 0 20 22" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="9" width="12" height="10" rx="2"/><path d="M6 9V6a4 4 0 0 1 8 0v3"/></svg>' : "&rsaquo;"}</span>
+        </button>`;
+    }).join("");
+    return phone(`
+      <p class="phase-tag">YOUR JOURNEY</p>
+      <h2 class="display">${title.toUpperCase()}.</h2>
+      <p class="lede">Choose a phase to open. Your progress is shared across all three tabs.</p>
+      <nav class="phase-picker" aria-label="Program phase">${rows}</nav>
+      <p class="fine" id="phase-note" role="status" hidden></p>
+    `, tab);
+  }
+  if (phase === 5) {
+    return phone(`
+      <button class="linkish phase-back" data-phase="back">&lsaquo; PHASES</button>
+      <p class="phase-tag">GRADUATE</p>
+      <h2 class="display">YOUR ONGOING RECORD.</h2>
+      <p class="lede">Your earlier phases stay open. Keep using your logbook and look back when it helps.</p>
+    `, tab);
+  }
+  return phone(`
+    <button class="linkish phase-back" data-phase="back">&lsaquo; PHASES</button>
+    <p class="phase-tag">PHASE ${phase}</p>
+    <h2 class="display">${PHASE_NAMES[phase - 1].toUpperCase()}.</h2>
+    ${body}
+  `, tab);
+}
+
+/* The one line of state worth showing on a locked-or-not row. */
+function noteFor(title, n, locked) {
+  if (locked || n === 5) return "";
+  if (title === "Ketones") return `${state.ketones.length} readings saved`;
+  if (title === "My body") return state.owned.scan ? "Scan saved" : "No scan saved yet";
+  return "";
+}
+
+function myBody(phase) {
   const owned = KIT.filter((k) => state.owned[k.id]).length;
   const rows = KIT.map((item) => {
     const watched = !!state.watched[item.id];
@@ -173,24 +235,37 @@ function phase1() {
         ${item.href ? `<a href="${item.href}"><div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div></a>` : `<button class="linkish" data-watch="${item.id}"><div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div></button>`}
       </div>`;
   }).join("");
-  return phone(
-    `
-    <p class="phase-tag">Phase 1</p>
-    <h2 class="display">KNOWING YOUR BODY.</h2>
-    <p class="lede">Before anything changes, we find out what you are working with. Learn what each piece of kit does, get the right one in your hands, and put your first numbers on the board.</p>
+  const kit = `
     <div class="split"><span class="field" style="margin:0">What you need</span><span class="badge">${owned} / ${KIT.length}</span></div>
     ${rows}
     <div class="split" style="margin-top:22px"><span class="field" style="margin:0">Your bloods</span><span class="badge">OPTIONAL</span></div>
     <div class="card">
       <p class="lede" style="margin:0">You do not have to hand us your blood test. But it is the difference between us teaching you about a factory and us teaching you about yours.</p>
-      <p class="fine">We ask every Carnivore Dad to get bloods twice a year. Not because something is wrong — because a man who checks is a man who knows.</p>
+      <p class="fine">We ask every Carnivore Dad to get bloods twice a year. Not because something is wrong, because a man who checks is a man who knows.</p>
       <button class="btn ghost">UPLOAD YOUR BLOOD TEST</button>
     </div>
-    <a class="btn" href="#/app/factory" style="margin-top:16px;display:block">OPEN YOUR FACTORY</a>
+    <div class="card">
+      <p class="field" style="margin-top:0">Ketone baseline</p>
+      <p class="lede" style="margin:0">Your starting readings stay with your Ketones record. Five tests, every second day.</p>
+      <a class="btn ghost" href="#/app/ketones/1" style="margin-top:12px;display:block">OPEN BASELINE READINGS</a>
+    </div>`;
+  const later = `
+    <p class="lede">The work for this phase. Your scan and your lessons sit together here.</p>`;
+  return phaseShell("My body", "home", phase, `
+    ${phase === 1 ? kit : later}
+    <div class="card">
+      <p class="field" style="margin-top:0">Your scan</p>
+      <p class="lede" style="margin:0">Your results exactly as the machine printed them. Reading a scan file automatically is not connected, so enter the numbers.</p>
+      <a class="btn ghost" href="#/app/scan" style="margin-top:12px;display:block">ENTER A SCAN</a>
+      <a class="btn ghost" href="#/app/factory" style="margin-top:8px;display:block">OPEN YOUR FACTORY</a>
+    </div>
+    <div class="card">
+      <p class="field" style="margin-top:0">Learn</p>
+      <p class="lede" style="margin:0">${phase === 1 ? "Basic macros and Your body lessons live in your phase library." : "Open the lessons for this phase."}</p>
+      <a class="btn ghost" href="#/app/videos/${phase}" style="margin-top:12px;display:block">OPEN PHASE VIDEOS</a>
+    </div>
     ${legal()}
-  `,
-    "home"
-  );
+  `);
 }
 
 function factory() {
@@ -284,91 +359,49 @@ function baja() {
   );
 }
 
-function videos() {
-  const lessons = [
-    ["baja", "Baja salt", "#/app/kit/baja-salt"],
-    ["fish", "Fish oil", ""],
-    ["mag", "Magnesium glycinate", ""],
-    ["ketones", "Ketone meter and strips", ""],
-    ["watch", "Smart watch", ""],
-    ["gym", "Gym membership — habit, not a program", ""],
-    ["scan", "How to read the scan", "#/app/scan"],
-    ["gut", "Gut health: amino acids and membranes", ""],
-    ["macros", "Intro macros", ""],
-  ];
-  return phone(
-    `
-    <p class="phase-tag">Videos</p>
-    <h2 class="display">THE KIT, THEN THE FACTORY.</h2>
-    <p class="lede">Knowledge first. Each CD plate opens the teaching for that thing. Occupation-language cuts are shelved for now — same lesson for every dad.</p>
-    ${lessons
-      .map(
-        ([id, name, href]) => `
+function videos(phase) {
+  const list = LESSONS[phase - 1] || [];
+  const rows = list.map((title) => `
       <div class="kit-row">
-        <div class="check ${state.watched[id] ? "on" : ""}">${state.watched[id] ? "✓" : ""}</div>
-        <div>${name}</div>
-        ${href ? `<a href="${href}"><div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div></a>` : `<button class="linkish" data-watch="${id}"><div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div></button>`}
-      </div>`
-      )
-      .join("")}
-  `,
-    "videos"
-  );
+        <div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">&#9655;</span></div>
+        <div>${title}${title === "Baja salt" ? '<div class="fine"><a href="#/app/kit/baja-salt">Read the written guide</a></div>' : ""}</div>
+        <span class="fine">Coming soon</span>
+      </div>`).join("");
+  return phaseShell("Videos", "videos", phase, `
+    <p class="lede">Your phase library. Videos appear here when they are ready.</p>
+    ${rows}
+  `);
 }
 
-function ketones() {
-  return phone(
-    `
-    <p class="phase-tag">Ketones</p>
-    <h2 class="display">BEFORE-PHOTO.</h2>
-    <p class="lede">Phase 1 baseline is five tests, one every second day, on the diet you eat now. Typical old-diet reading is 0.0–0.2 mmol/L. That is the photo Phase 2 is judged against.</p>
-    <label class="field">Morning reading (mmol/L)</label>
-    <input id="mmol" placeholder="0.1" />
-    <button class="btn" style="margin-top:12px" data-act="log-ketone">SAVE READING</button>
-    <p class="badge" style="margin-top:16px">${state.ketones.length} / 5</p>
-    ${state.ketones
-      .map(
-        (k, i) => `
+function ketones(phase) {
+  const rows = state.ketones.map((k, i) => `
       <div class="kit-row">
         <div class="check on">${i + 1}</div>
         <div>${escapeHtml(k.mmol)} mmol/L<div class="fine">${new Date(k.at).toLocaleString()}</div></div>
         <span></span>
-      </div>`
-      )
-      .join("")}
-  `,
-    "ketones"
-  );
+      </div>`).join("");
+  return phaseShell("Ketones", "ketones", phase, `
+    <p class="lede">${phase === 1
+      ? "Your starting picture. Five tests, one every second day, on the diet you eat now. A typical old-diet reading is 0.0 to 0.2 mmol/L, and a low number is the honest starting point, not a failure."
+      : "Your meter readings, kept in one place."}</p>
+    <label class="field">Morning reading (mmol/L)</label>
+    <input id="mmol" placeholder="0.1" />
+    <button class="btn" style="margin-top:12px" data-act="log-ketone">SAVE READING</button>
+    <p class="badge" style="margin-top:16px">${state.ketones.length}${phase === 1 ? " / 5" : ""}</p>
+    ${rows}
+    <p class="fine">A reading is a fact about right now, not a score. The dial is a scale, not a target.</p>
+  `);
 }
 
 function shop() {
-  return phone(
-    `
-    <p class="phase-tag">Shop</p>
-    <h2 class="display">THE KIT SHELF.</h2>
-    <p class="lede">Salt, fish oil, magnesium, strips, merch. Meat is not on this cart — perishable supply is a different business.</p>
+  return phone(`
+    <p class="phase-tag">YOUR KIT</p>
+    <h2 class="display">SHOP.</h2>
+    <p class="lede">Take a look at the proposed Carnivore Dads range. Products and prices are indicative, and orders are not open yet. Your health record stays in this app.</p>
     ${SHOP.map(([name, price]) => `<div class="kit-row"><div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div><div>${name}</div><strong>$${price}</strong></div>`).join("")}
-  `,
-    "shop"
-  );
-}
-
-function account() {
-  const a = state.address || {};
-  return phone(
-    `
-    <p class="phase-tag">Account</p>
-    <h2 class="display">YOUR FILE.</h2>
-    <div class="card">
-      <p class="field" style="margin-top:0">Email</p><p>${escapeHtml(state.email || "you@email.com")}</p>
-      <p class="field">Trade</p><p>${escapeHtml(state.occupation || "Not set")}</p>
-      <p class="field">Delivery</p><p>${escapeHtml([a.street, a.suburb, a.state, a.postcode].filter(Boolean).join(" ") || "Address on file")}</p>
-      <p class="field">Plan</p><p>$25 / week · active</p>
-    </div>
-    <a class="btn ghost" href="#/">SIGN OUT</a>
-  `,
-    "account"
-  );
+    <a class="btn ghost" href="#/app/my-body" style="margin-top:16px;display:block">BACK TO YOUR KIT</a>
+    <a class="btn ghost" href="#/app/videos" style="margin-top:8px;display:block">VIEW THE GUIDES</a>
+  `, "shop");
 }
 
 function adminTop() {
@@ -473,14 +506,22 @@ function route() {
   const parts = hash.split("/").filter(Boolean);
   if (hash === "/" || hash === "") return login();
   if (hash === "/reset") return reset();
-  if (hash === "/app/phase-1") return phase1();
+  // The three hub tabs take an optional phase: #/app/my-body opens the picker,
+  // #/app/my-body/2 opens phase 2. Anything above the phase he is up to is
+  // refused by phaseShell rather than routed to.
+  const hub = hash.match(/^\/app\/(my-body|ketones|videos)(?:\/(\d))?$/);
+  if (hub) {
+    const phase = hub[2] ? Math.min(5, Math.max(1, Number(hub[2]))) : null;
+    const open = phase !== null && phase <= (Number(state.phase) || 1) ? phase : null;
+    if (hub[1] === "my-body") return myBody(open);
+    if (hub[1] === "ketones") return ketones(open);
+    return videos(open);
+  }
+  if (hash === "/app/phase-1") return myBody(1);
   if (hash === "/app/factory") return factory();
   if (hash === "/app/scan") return scan();
   if (hash === "/app/kit/baja-salt") return baja();
-  if (hash === "/app/videos") return videos();
-  if (hash === "/app/ketones") return ketones();
   if (hash === "/app/shop") return shop();
-  if (hash === "/app/account") return account();
   if (hash === "/admin") return adminLogin();
   if (hash === "/admin/clients") return clients();
   if (parts[0] === "admin" && parts[1] === "clients" && parts[2]) return clientFile(parts[2]);
@@ -492,6 +533,23 @@ function val(id) {
 }
 
 function bind() {
+  document.querySelectorAll("[data-phase]").forEach((btn) => {
+    btn.onclick = () => {
+      const want = btn.getAttribute("data-phase");
+      const base = location.hash.replace(/^#/, "").replace(/\/\d$/, "");
+      location.hash = want === "back" ? "#" + base : "#" + base + "/" + want;
+    };
+  });
+  // A locked phase says why rather than doing nothing.
+  document.querySelectorAll("[data-locked]").forEach((btn) => {
+    btn.onclick = () => {
+      const n = Number(btn.getAttribute("data-locked"));
+      const note = document.getElementById("phase-note");
+      if (!note) return;
+      note.textContent = `${n === 5 ? "Graduate" : "Phase " + n} opens after the phase before it.`;
+      note.hidden = false;
+    };
+  });
   document.querySelectorAll("[data-country]").forEach((btn) => {
     btn.onclick = () => save({ country: btn.getAttribute("data-country") });
   });
