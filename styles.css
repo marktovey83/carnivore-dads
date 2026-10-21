@@ -66,7 +66,7 @@ a:hover { color: var(--ember-hot); }
   padding: 22px 22px 28px;
   overflow: auto;
 }
-.screen.with-tabs { padding-bottom: calc(118px + env(safe-area-inset-bottom)); }
+.screen.with-tabs { padding-bottom: calc(126px + env(safe-area-inset-bottom)); }
 
 /* The lockup: the plates on top, flag then CD, then the wordmark underneath
    with the ember rule and the slogan beside it. The plates are machined
@@ -117,7 +117,7 @@ a:hover { color: var(--ember-hot); }
   color: var(--bone);
   white-space: nowrap;
 }
-.ember-rule { width: 2px; align-self: stretch; min-height: 26px; background: var(--ember); border-radius: 1px; flex: none; }
+
 .display {
   font-family: Anton, "Arial Narrow", sans-serif;
   font-weight: 400;
@@ -128,19 +128,24 @@ a:hover { color: var(--ember-hot); }
 
 /* Compact, for the screens that carry a tab bar. */
 .lockup.compact { gap: 8px; margin: 2px 0 18px; }
-.lockup.compact .flag-plate, .lockup.compact .cd-plate { height: 34px; }
-.lockup.compact .flag-plate { min-width: 44px; }
-.lockup.compact .cd-plate { min-width: 36px; }
+.lockup.compact .flag-plate, .lockup.compact .cd-plate { height: 44px; }
+.lockup.compact .flag-plate { min-width: 56px; }
+.lockup.compact .cd-plate { min-width: 46px; }
 .lockup.compact .flag-plate::before, .lockup.compact .flag-plate::after,
 .lockup.compact .cd-plate::before, .lockup.compact .cd-plate::after {
-  top: 4px; width: 3px; height: 3px; box-shadow: 0 23px #777;
+  top: 4px; width: 3.5px; height: 3.5px; box-shadow: 0 32px #777;
 }
-.lockup.compact .cd-plate span { font-size: 16px; }
-.lockup.compact .mark-line strong { font-size: clamp(14px, 4.4vw, 18px); }
-.lockup.compact .ember-rule { min-height: 17px; }
+.lockup.compact .cd-plate span { font-size: 21px; }
+.lockup.compact .mark-line strong { font-size: clamp(17px, 5.6vw, 23px); }
+
+/* The rule belongs to the slogan, not to the gap. Carried as a border it
+   stays with the slogan when the line wraps, instead of being orphaned on
+   the end of the name. */
 .etk {
   display: block;
   margin: 0;
+  border-left: 2px solid var(--ember);
+  padding-left: 10px;
   color: var(--ember);
   font-size: clamp(6.5px, 2.3vw, 9.5px);
   letter-spacing: 0.15em;
@@ -238,20 +243,39 @@ a.btn.ghost { color: var(--bone); }
   position: fixed;
   left: 0; right: 0; bottom: 0;
   z-index: 10;
-  height: calc(78px + env(safe-area-inset-bottom));
+  height: calc(86px + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
-  background: #101010;
+  background: #121212;
   border-top: 1px solid #2b2b2b;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
+  align-items: start;
 }
 .tabs a, .tabs button {
   background: none; border: 0; color: #8a8374;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 4px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
-  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 5px; padding-top: 13px; min-height: 44px;
+  font-size: 11px; letter-spacing: 0.04em; text-transform: none;
+  text-decoration: none; cursor: pointer;
 }
+.tabs a svg { width: 23px; height: 23px; }
 .tabs a.on, .tabs button.on { color: var(--ember); }
+
+/* My body is the way home, so it is the one a man can hit without looking:
+   a raised plate that breaks the line of the ribbon. */
+.tabs a.tab-hub { overflow: visible; color: var(--ember); font-weight: 700; padding-top: 6px; }
+.tabs a.tab-hub svg {
+  box-sizing: content-box;
+  width: 30px; height: 30px;
+  padding: 13px;
+  margin-top: -26px;
+  border: 2px solid #d7aa53;
+  border-radius: 50%;
+  background: var(--ember);
+  color: var(--charcoal);
+  box-shadow: 0 0 0 6px #121212, 0 6px 14px rgba(0, 0, 0, 0.5);
+}
+.tabs a.tab-hub span { margin-top: 3px; }
 
 .country-row {
   margin-top: 28px;
@@ -395,9 +419,9 @@ a.btn.ghost { color: var(--bone); }
    uses: about four fifths of the plate's width, so it reads as mounted
    rather than lost in the middle of it. */
 .flag-plate .flag-svg { display: block; width: 50px; height: 25px; border-radius: 1px; }
-.lockup.compact .flag-plate .flag-svg { width: 34px; height: 17px; }
+.lockup.compact .flag-plate .flag-svg { width: 44px; height: 22px; }
 
-.lockup.compact .etk { font-size: clamp(6px, 1.9vw, 8px); letter-spacing: 0.1em; }
+.lockup.compact .etk { font-size: clamp(6.5px, 2.1vw, 8.5px); letter-spacing: 0.1em; }
 
 /* A 320px phone is the floor. The wordmark and slogan shrink before the
    plates do, because the plates are the part that has to stay legible. */

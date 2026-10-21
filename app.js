@@ -90,15 +90,25 @@ function lockup(compact) {
       </div>
       <div class="mark-line">
         <strong>CARNIVORE DADS</strong>
-        <span class="ember-rule"></span>
         <span class="etk">Energy through knowledge</span>
       </div>
     </div>`;
 }
 
+const TABS = [
+  ["#/app/videos", "Videos", "videos", "M8 5v14l11-7z"],
+  ["#/app/ketones", "Ketones", "ketones", "M12 3S5 11 5 15a7 7 0 0 0 14 0c0-4-7-12-7-12z"],
+  ["#/app/my-body", "My body", "home", "M12 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6M8 10h8l-2 7 1 5M10 17l-1 5M8 10l-3 5M16 10l3 5"],
+  ["#/app/shop", "Shop", "shop", "M3 4h2l3 11h11l2-8H6M9 20h1M18 20h1"],
+  ["#/app/account", "Account", "account", "M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M4 21v-2a8 8 0 0 1 16 0v2"],
+];
+
 function tabs(active) {
-  const item = (href, label, key) => `<a href="${href}" class="${active === key ? "on" : ""}">${label}</a>`;
-  return `<nav class="tabs">${item("#/app/videos", "Videos", "videos")}${item("#/app/ketones", "Ketones", "ketones")}${item("#/app/my-body", "My body", "home")}${item("#/app/shop", "Shop", "shop")}${item("#/app/account", "Account", "account")}</nav>`;
+  return `<nav class="tabs" aria-label="Main">${TABS.map(([href, label, key, icon]) => `
+    <a href="${href}" class="${key === "home" ? "tab-hub" : ""}${active === key ? " on" : ""}" ${active === key ? 'aria-current="page"' : ""}>
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${icon}" /></svg>
+      <span>${label}</span>
+    </a>`).join("")}</nav>`;
 }
 
 function phone(inner, tab) {
