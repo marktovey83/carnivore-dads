@@ -18,7 +18,7 @@ React build of the Carnivore Dads app — a five-phase men's health program for 
 
 Dad flow
 
-1. Login (returning dad + country plate). Sign in does not work yet and says so.
+1. Login: the lockup, the slogan, LOG IN or REGISTER, and the country plate
 2. Start your reset (numbers, trade, address)
 3. My body: the phase picker, then Phase 1's kit, bloods, scan and lessons
 4. Your factory (parametric silhouette from scan numbers)
@@ -71,20 +71,25 @@ Hash routes:
 - `#/app/ketones` · `#/app/videos` · `#/app/shop`
 - `#/admin` Staff
 
-## Payment and accounts are out, for now
+## The login is a door, not an auth check
+
+The lockup, the slogan, and two ways in: LOG IN opens My body, REGISTER opens
+Start your reset. There are no email or password fields, on purpose. There is
+no auth service behind this, and a form that takes a password and then lets
+anybody through is worse than no form: it tells a man an account is holding
+his record when nothing is. With no fields, nothing is pretending.
+
+The country picker stays at the foot and sets the flag in the lockup.
+
+## Payment is out, for now
 
 The $25 a week screen, the card fields, "check your email" and "set your
-password" have been taken out. There is no payment provider and no auth
-service behind any of it, and a form that takes a card number or a password
-and then says it worked is worse than not having one: it leaves a man
-believing an account is holding his record.
+password" have been taken out. There is no payment provider behind any of it,
+and a form that takes a card number and then says it worked is worse than not
+having one.
 
-Sign in refuses, in a sentence that says why and where his record actually
-is. START YOUR RESET collects his numbers and his trade and opens Phase 1
-straight away. His record is on the phone.
-
-This is also what the production build in `rjohnsenwhatsnext-bit/Carnivore-Dad`
-does, so these screens now port across without an argument.
+REGISTER collects his numbers and his trade and opens Phase 1 straight away.
+His record is on the phone.
 
 Putting payment back is a deliberate job: a provider, a real account, and the
 cancellation terms that are still a placeholder.

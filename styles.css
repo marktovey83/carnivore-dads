@@ -320,3 +320,15 @@ a.btn.ghost { color: var(--bone); }
 .phase-back { display: block; margin-bottom: 12px; letter-spacing: .14em; font-size: 12px; }
 
 .desk-links { display: flex; gap: 16px; }
+
+/* The top bar has to hold a name and two links on a 320px phone without
+   breaking a link across two lines. The strapline is the part that gives. */
+.desk-bar { gap: 12px; flex-wrap: nowrap; }
+.desk-bar > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desk-links { flex: 0 0 auto; }
+.desk-links a { white-space: nowrap; }
+@media (max-width: 480px) {
+  .desk-sub { display: none; }
+  .desk-bar { font-size: 11px; letter-spacing: 0.12em; padding: 14px 16px 6px; }
+  .desk-links { gap: 12px; }
+}

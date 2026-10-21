@@ -102,7 +102,7 @@ function tabs(active) {
 function phone(inner, tab) {
   return `
     <div class="desk">
-      <div class="desk-bar"><span><strong>Carnivore Dads</strong> · factory reset</span><span class="desk-links"><a href="#/">Log in</a><a href="#/admin">Admin</a></span></div>
+      <div class="desk-bar"><span><strong>Carnivore Dads</strong><span class="desk-sub"> · factory reset</span></span><span class="desk-links"><a href="#/">Log in</a><a href="#/admin">Admin</a></span></div>
       <div class="phone">
         <div class="screen ${tab ? "with-tabs" : ""}">
           <a href="#/app/my-body">${lockup(!!tab)}</a>
@@ -120,15 +120,10 @@ function legal() {
 function login() {
   const name = COUNTRIES.find((c) => c[0] === state.country)?.[1];
   return phone(`
-    <label class="field">Email</label>
-    <input id="email" value="${escapeAttr(state.email)}" placeholder="you@email.com" />
-    <label class="field">Password</label>
-    <input id="password" type="password" />
-    <p class="fine" style="margin-top:10px"><button class="linkish" data-act="forgot">Forgot password</button></p>
-    <p class="fine" id="signin-note" role="alert" hidden style="margin-top:12px;color:#C9963A;line-height:1.45"></p>
-    <button class="btn" style="margin-top:18px" data-act="signin">SIGN IN</button>
-    <p class="fine" style="margin:22px 0 8px;letter-spacing:.18em">NEW HERE</p>
-    <a class="btn ghost" href="#/reset">START YOUR RESET</a>
+    <p class="lede" style="text-align:center">Know your body. Build your habits. Keep showing up.</p>
+    <a class="btn" href="#/app/my-body" style="margin-top:26px;display:block">LOG IN</a>
+    <p class="fine" style="margin:22px 0 8px;letter-spacing:.18em;text-align:center">NEW HERE</p>
+    <a class="btn ghost" href="#/reset">REGISTER</a>
     <p class="legal">Education and advice only. Your GP owns your medicine.</p>
     <div class="country-row">
       <div class="split"><span class="field" style="margin:0">Your country</span><span>${name}</span></div>
@@ -568,25 +563,6 @@ function bind() {
   document.querySelectorAll("[data-act]").forEach((act) => {
     act.onclick = () => {
     const kind = act.getAttribute("data-act");
-    if (kind === "signin") {
-      // There are no accounts yet, so this does not wave anybody through.
-      // Saying "welcome back" when nothing was checked would leave a man
-      // believing an account was holding his record. It is on this phone.
-      const note = document.getElementById("signin-note");
-      if (note) {
-        note.textContent =
-          "There are no accounts yet. Your record is kept on this phone, so there is nothing to sign in to. Tap START YOUR RESET to open Phase 1.";
-        note.hidden = false;
-      }
-    }
-    if (kind === "forgot") {
-      const note = document.getElementById("signin-note");
-      if (note) {
-        note.textContent =
-          "No accounts yet, so there is no password to reset. Nothing of yours is lost: your record is on this phone.";
-        note.hidden = false;
-      }
-    }
     if (kind === "start") {
       save({
         email: val("email") || "you@email.com",
