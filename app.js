@@ -334,10 +334,9 @@ function ketoneMeter() {
     `
     <p class="phase-tag">Phase 1 &middot; The kit</p>
     <h2 class="display">YOUR KETONE METER.</h2>
-    <div class="lesson-pending">
-      <p class="etk">BEING MADE</p>
-      <p>The written points are below and they are the whole lesson for now. The video lands here when it is cut.</p>
-    </div>
+    <video class="lesson-video" controls preload="metadata" playsinline
+           src="./assets/phase1-ketone-meter.mp4"></video>
+    <p class="fine">1:30</p>
     <p class="field">What the lesson covers</p>
     <ul class="points">
       <li><strong>THE DOCK GOES QUIET</strong>The machines still need power when no new fuel is coming in. The work does not stop. Head office puts the call out: release stored fat.</li>
@@ -348,7 +347,7 @@ function ketoneMeter() {
       <li><strong>WHAT WE ARE ACTUALLY AFTER</strong>Not a number on a scale. The warehouse around the organs. The meter tells us that warehouse is moving.</li>
       <li><strong>THE TREND, NOT THE READING</strong>One lucky high number is not the story. Watch the pattern over days. The factory is learning to run on its own stores.</li>
     </ul>
-    <button class="btn" data-watch="ketones">READ IT &mdash; UNLOCK THE BOX</button>
+    <button class="btn" data-watch="ketones">WATCHED IT &mdash; UNLOCK THE BOX</button>
     <a class="btn ghost" href="#/app/ketones/1" style="margin-top:8px;display:block">OPEN YOUR BASELINE READINGS</a>
     <a class="btn ghost" href="#/app/shop" style="margin-top:8px;display:block">GET IT IN THE SHOP</a>
     ${legal()}
@@ -414,6 +413,7 @@ function ketones(phase) {
     <p class="badge" style="margin-top:16px">${state.ketones.length}${phase === 1 ? " / 5" : ""}</p>
     ${rows}
     <p class="fine">A reading is a fact about right now, not a score. The dial is a scale, not a target.</p>
+    <a class="btn ghost" href="#/app/kit/ketone-meter" style="margin-top:12px;display:block">WATCH: YOUR KETONE METER</a>
   `);
 }
 
