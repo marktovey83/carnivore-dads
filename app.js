@@ -15,7 +15,7 @@ const KIT = [
   { id: "ketones", name: "Blood ketone meter and strips", slug: "ketone-meter", video: "phase1-ketone-meter.mp4" },
   { id: "baja", name: "Mineralised salt", slug: "mineralised-salt", video: "phase1-mineralised-salt.mp4" },
   { id: "fish", name: "Fish oil", slug: "fish-oil", video: "phase1-fish-oil.mp4" },
-  { id: "mag", name: "Magnesium glycinate", slug: "magnesium", video: null },
+  { id: "mag", name: "Magnesium glycinate", slug: "magnesium", video: "phase1-magnesium.mp4" },
   { id: "watch", name: "Smart watch with heart rate", slug: "smart-watch", video: null },
   { id: "gym", name: "Gym membership", slug: "gym-membership", video: null },
   { id: "scan", name: "Body scan", href: "#/app/scan" },
@@ -361,6 +361,7 @@ function scan() {
 function kitLesson(slug) {
   if (slug === "ketone-meter") return ketoneMeter();
   if (slug === "fish-oil") return fishOil();
+  if (slug === "magnesium") return magnesium();
   if (slug === "mineralised-salt" || slug === "baja-salt") return mineralisedSalt();
   const item = kitItem(slug);
   if (!item) return login();
@@ -375,6 +376,32 @@ function kitLesson(slug) {
     <p class="fine">Nothing is held up by a lesson that does not exist yet. Tick this off whenever it is in your hands.</p>
     <button class="btn" data-watch="${item.id}">GOT IT &mdash; UNLOCK THE BOX</button>
     <a class="btn ghost" href="#/app/my-body/1" style="margin-top:8px;display:block">BACK TO THE KIT</a>
+    ${legal()}
+  `,
+    "videos"
+  );
+}
+
+function magnesium() {
+  return phone(
+    `
+    <p class="phase-tag">Phase 1 &middot; The kit</p>
+    <h2 class="display">MAGNESIUM GLYCINATE.</h2>
+    <video class="lesson-video" controls preload="metadata" playsinline
+           src="./assets/phase1-magnesium.mp4"></video>
+    <p class="fine">1:21</p>
+    <p class="field">What the video covers</p>
+    <ul class="points">
+      <li><strong>THE OFF SWITCH</strong>Some machines need a quiet off switch. Magnesium is that switch for muscle, for nerves, and for the night shift.</li>
+      <li><strong>THE DOCK CHANGES FAST</strong>Drop the sugar and the flour and the loading dock changes quickly. The pipes can run short on minerals for a few days.</li>
+      <li><strong>RESTLESS LEGS, TIGHT CALVES</strong>That is why some men get them early on. It is not a broken engine. It is a short mineral load while the factory switches fuel.</li>
+      <li><strong>WHY GLYCINATE</strong>It is the form we use because it is gentle on the gut, and it carries glycine with it.</li>
+      <li><strong>A TOP-UP, NOT A SEDATIVE</strong>It helps the off switch work while the pipes settle. It is not a sedative and it is not a prescription.</li>
+      <li><strong>DO NOT CHASE A DOSE</strong>It is one of the quiet minerals the factory uses every day. Not a brand, not a big number, not medicine.</li>
+      <li><strong>THE BODY ALREADY KNOWS HOW TO REST</strong>Your job is to stop a short mineral load from keeping the machines on.</li>
+    </ul>
+    <button class="btn" data-watch="mag">WATCHED IT &mdash; UNLOCK THE BOX</button>
+    <a class="btn ghost" href="#/app/shop" style="margin-top:8px;display:block">GET IT IN THE SHOP</a>
     ${legal()}
   `,
     "videos"
