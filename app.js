@@ -14,7 +14,7 @@ const KIT = [
   // exists; null means the lesson says so rather than pretending.
   { id: "ketones", name: "Blood ketone meter and strips", slug: "ketone-meter", video: "phase1-ketone-meter.mp4" },
   { id: "baja", name: "Mineralised salt", slug: "mineralised-salt", video: "phase1-mineralised-salt.mp4" },
-  { id: "fish", name: "Fish oil", slug: "fish-oil", video: null },
+  { id: "fish", name: "Fish oil", slug: "fish-oil", video: "phase1-fish-oil.mp4" },
   { id: "mag", name: "Magnesium glycinate", slug: "magnesium", video: null },
   { id: "watch", name: "Smart watch with heart rate", slug: "smart-watch", video: null },
   { id: "gym", name: "Gym membership", slug: "gym-membership", video: null },
@@ -360,6 +360,7 @@ function scan() {
 
 function kitLesson(slug) {
   if (slug === "ketone-meter") return ketoneMeter();
+  if (slug === "fish-oil") return fishOil();
   if (slug === "mineralised-salt" || slug === "baja-salt") return mineralisedSalt();
   const item = kitItem(slug);
   if (!item) return login();
@@ -374,6 +375,32 @@ function kitLesson(slug) {
     <p class="fine">Nothing is held up by a lesson that does not exist yet. Tick this off whenever it is in your hands.</p>
     <button class="btn" data-watch="${item.id}">GOT IT &mdash; UNLOCK THE BOX</button>
     <a class="btn ghost" href="#/app/my-body/1" style="margin-top:8px;display:block">BACK TO THE KIT</a>
+    ${legal()}
+  `,
+    "videos"
+  );
+}
+
+function fishOil() {
+  return phone(
+    `
+    <p class="phase-tag">Phase 1 &middot; The kit</p>
+    <h2 class="display">FISH OIL.</h2>
+    <video class="lesson-video" controls preload="metadata" playsinline
+           src="./assets/phase1-fish-oil.mp4"></video>
+    <p class="fine">1:21</p>
+    <p class="field">What the video covers</p>
+    <ul class="points">
+      <li><strong>THE WALLS OF THE MACHINES</strong>Every machine is built from parts that come through the loading dock. The walls, the membranes, need two kinds of oil in balance: omega six and omega three.</li>
+      <li><strong>THE FLOOD</strong>Seed oils flood the dock with omega six. Soy, canola, sunflower, corn.</li>
+      <li><strong>STIFF AND NOISY</strong>Too much of one oil and the walls get stiff and noisy, and the alarm starts to ring. That is inflammation.</li>
+      <li><strong>THE OTHER SIDE</strong>Fish oil brings EPA and DHA, the long chain oils the brain and the organs prefer for quiet, steady work.</li>
+      <li><strong>TURN OFF THE TAP FIRST</strong>You cannot out-supplement a flood. Throw the seed oil bottle out and stop the excess at the dock. Then a simple top-up helps restock the membranes while the factory rebuilds.</li>
+      <li><strong>QUIET AND STEADY</strong>The membranes of long-lived cells take time to turn over. That is why this work is slow and steady rather than a quick fix.</li>
+      <li><strong>NOT A MAGIC BOTTLE</strong>Do not chase a brand and do not treat fish oil like medicine. It is the missing oil the dock stopped delivering when the seed oils took over.</li>
+    </ul>
+    <button class="btn" data-watch="fish">WATCHED IT &mdash; UNLOCK THE BOX</button>
+    <a class="btn ghost" href="#/app/shop" style="margin-top:8px;display:block">GET IT IN THE SHOP</a>
     ${legal()}
   `,
     "videos"
