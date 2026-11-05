@@ -11,7 +11,7 @@ const COUNTRIES = [
 const TRADES = ["FIFO electrician", "Police", "Plumber / trades", "Truck / long haul", "Builder", "Office / desk", "Other"];
 const KIT = [
   { id: "ketones", name: "Blood ketone meter and strips" },
-  { id: "baja", name: "Baja salt", href: "#/app/kit/baja-salt" },
+  { id: "baja", name: "Mineralised salt", href: "#/app/kit/mineralised-salt" },
   { id: "fish", name: "Fish oil" },
   { id: "mag", name: "Magnesium glycinate" },
   { id: "watch", name: "Smart watch with heart rate" },
@@ -20,13 +20,13 @@ const KIT = [
 ];
 const PHASE_NAMES = ["Knowing your body", "The dad bod", "The liver", "Advanced macros", "Graduate"];
 const LESSONS = [
-  ["Your ketone meter", "Your smart watch", "Baja salt", "Fish oil", "Magnesium glycinate", "Gym and body scan", "Gut health", "Intro macros"],
+  ["Your ketone meter", "Your smart watch", "Mineralised salt", "Fish oil", "Magnesium glycinate", "Gym and body scan", "Gut health", "Intro macros"],
   ["The crash", "Basic macros", "Zone training", "Alcohol", "Visceral fat"],
   ["The processing station", "Intro fasting", "Zones continued"],
   ["Timing and amounts", "When carbs come back", "Your scan as a work list", "Structured workouts"],
 ];
 const SHOP = [
-  ["Baja Gold sea salt", 18],
+  ["Mineralised sea salt", 18],
   ["Fish oil", 32],
   ["Magnesium glycinate", 24],
   ["Ketone strips", 29],
@@ -329,12 +329,14 @@ function scan() {
   );
 }
 
-function baja() {
+function mineralisedSalt() {
   return phone(
     `
     <p class="phase-tag">Phase 1 · The kit</p>
-    <h2 class="display">BAJA GOLD SEA SALT.</h2>
-    <div class="body-stage" style="height:180px;background:#16120c"><div><p class="etk" style="text-align:center">1:06</p><p style="font-family:Anton,sans-serif;font-size:22px">PLAY</p></div></div>
+    <h2 class="display">MINERALISED SALT.</h2>
+    <video class="lesson-video" controls preload="metadata" playsinline
+           src="./assets/phase1-mineralised-salt.mp4"></video>
+    <p class="fine">1:44</p>
     <p class="field">What the video covers</p>
     <ul class="points">
       <li><strong>NOT TABLE SALT</strong>Two piles side by side. One is stripped white. One still has what the sea put in it.</li>
@@ -355,7 +357,7 @@ function videos(phase) {
   const rows = list.map((title) => `
       <div class="kit-row">
         <div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">&#9655;</span></div>
-        <div>${title}${title === "Baja salt" ? '<div class="fine"><a href="#/app/kit/baja-salt">Read the written guide</a></div>' : ""}</div>
+        <div>${title}${title === "Mineralised salt" ? '<div class="fine"><a href="#/app/kit/mineralised-salt">Open the lesson</a></div>' : ""}</div>
         <span class="fine">Coming soon</span>
       </div>`).join("");
   return phaseShell("Videos", "videos", phase, `
@@ -543,7 +545,7 @@ function route() {
   if (hash === "/app/phase-1") return myBody(1);
   if (hash === "/app/factory") return factory();
   if (hash === "/app/scan") return scan();
-  if (hash === "/app/kit/baja-salt") return baja();
+  if (hash === "/app/kit/mineralised-salt" || hash === "/app/kit/baja-salt") return mineralisedSalt();
   if (hash === "/app/shop") return shop();
   if (hash === "/app/account") return account();
   if (hash === "/admin") return adminLogin();
