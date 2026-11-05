@@ -456,3 +456,11 @@ a.btn.ghost { color: var(--bone); }
     padding-bottom: 0;
   }
 }
+
+/* A lesson whose video is not cut yet. Says so, rather than showing a play
+   button that does nothing. */
+.lesson-pending {
+  border: 1px dashed #3a3a3a; border-radius: 6px;
+  padding: 18px 16px; margin: 4px 0 6px; background: #161616;
+}
+.lesson-pending p:last-child { margin: 8px 0 0; color: var(--muted); font-size: 14px; line-height: 1.45; }

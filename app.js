@@ -10,7 +10,7 @@ const COUNTRIES = [
 ];
 const TRADES = ["FIFO electrician", "Police", "Plumber / trades", "Truck / long haul", "Builder", "Office / desk", "Other"];
 const KIT = [
-  { id: "ketones", name: "Blood ketone meter and strips" },
+  { id: "ketones", name: "Blood ketone meter and strips", href: "#/app/kit/ketone-meter" },
   { id: "baja", name: "Mineralised salt", href: "#/app/kit/mineralised-salt" },
   { id: "fish", name: "Fish oil" },
   { id: "mag", name: "Magnesium glycinate" },
@@ -329,6 +329,34 @@ function scan() {
   );
 }
 
+function ketoneMeter() {
+  return phone(
+    `
+    <p class="phase-tag">Phase 1 &middot; The kit</p>
+    <h2 class="display">YOUR KETONE METER.</h2>
+    <div class="lesson-pending">
+      <p class="etk">BEING MADE</p>
+      <p>The written points are below and they are the whole lesson for now. The video lands here when it is cut.</p>
+    </div>
+    <p class="field">What the lesson covers</p>
+    <ul class="points">
+      <li><strong>THE DOCK GOES QUIET</strong>The machines still need power when no new fuel is coming in. The work does not stop. Head office puts the call out: release stored fat.</li>
+      <li><strong>THE FIRST WAREHOUSE</strong>The fat sitting closest to the blood pipes is the fat wrapped around the organs. That is the first warehouse to open.</li>
+      <li><strong>THE PROCESSING STATION</strong>Fat leaves the depot into the corridor, and the liver turns some of it into ketones: a clean fuel the brain and organs can use.</li>
+      <li><strong>THE GAUGE ON THE PIPE</strong>The meter does not measure how much fat you have left. It measures that fat is being broken down right now.</li>
+      <li><strong>A LOW READING IS NOT A BROKEN FACTORY</strong>On the diet you eat today a low number is the honest starting point. That is why we take the baseline first, so every later reading has something to be compared against.</li>
+      <li><strong>WHAT WE ARE ACTUALLY AFTER</strong>Not a number on a scale. The warehouse around the organs. The meter tells us that warehouse is moving.</li>
+      <li><strong>THE TREND, NOT THE READING</strong>One lucky high number is not the story. Watch the pattern over days. The factory is learning to run on its own stores.</li>
+    </ul>
+    <button class="btn" data-watch="ketones">READ IT &mdash; UNLOCK THE BOX</button>
+    <a class="btn ghost" href="#/app/ketones/1" style="margin-top:8px;display:block">OPEN YOUR BASELINE READINGS</a>
+    <a class="btn ghost" href="#/app/shop" style="margin-top:8px;display:block">GET IT IN THE SHOP</a>
+    ${legal()}
+  `,
+    "videos"
+  );
+}
+
 function mineralisedSalt() {
   return phone(
     `
@@ -360,7 +388,7 @@ function videos(phase) {
   const rows = list.map((title) => `
       <div class="kit-row">
         <div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">&#9655;</span></div>
-        <div>${title}${title === "Mineralised salt" ? '<div class="fine"><a href="#/app/kit/mineralised-salt">Open the lesson</a></div>' : ""}</div>
+        <div>${title}${title === "Mineralised salt" ? '<div class="fine"><a href="#/app/kit/mineralised-salt">Open the lesson</a></div>' : title === "Your ketone meter" ? '<div class="fine"><a href="#/app/kit/ketone-meter">Read the lesson</a></div>' : ""}</div>
         <span class="fine">Coming soon</span>
       </div>`).join("");
   return phaseShell("Videos", "videos", phase, `
@@ -548,6 +576,7 @@ function route() {
   if (hash === "/app/phase-1") return myBody(1);
   if (hash === "/app/factory") return factory();
   if (hash === "/app/scan") return scan();
+  if (hash === "/app/kit/ketone-meter") return ketoneMeter();
   if (hash === "/app/kit/mineralised-salt" || hash === "/app/kit/baja-salt") return mineralisedSalt();
   if (hash === "/app/shop") return shop();
   if (hash === "/app/account") return account();
