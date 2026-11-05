@@ -339,14 +339,17 @@ function mineralisedSalt() {
     <p class="fine">1:44</p>
     <p class="field">What the video covers</p>
     <ul class="points">
-      <li><strong>NOT TABLE SALT</strong>Two piles side by side. One is stripped white. One still has what the sea put in it.</li>
-      <li><strong>SEA OF CORTEZ</strong>Unrefined and mineral rich, off the ponds rather than out of a refinery.</li>
-      <li><strong>MAGNESIUM · POTASSIUM · TRACE</strong>What survives when nobody strips it out.</li>
-      <li><strong>THE DUMP</strong>Pipes running dry, not the engine failing. When the fuel changes, water and salt go out with it.</li>
-      <li><strong>THE PINCH</strong>A pinch in the water. A pinch on the steak. That is the whole method.</li>
+      <li><strong>THE PIPES</strong>Everything that comes in at the loading dock ends up in the pipes. They carry what the machines need to keep running.</li>
+      <li><strong>STRIPPED CLEAN</strong>Table salt is sodium chloride and nothing else. Every other mineral has been taken out of it. That is what most men put on their food every day.</li>
+      <li><strong>WHAT SURVIVES</strong>Grey Celtic salt off the Atlantic, or Baja sea salt out of the Sea of Cortez. Both still carry the small minerals the factory uses every day.</li>
+      <li><strong>WHEN THE DOCK CHANGES</strong>Drop the sugar and the flour and insulin drops with them. The kidneys open the drains, and water and sodium go out first.</li>
+      <li><strong>DRY PIPES, NOT A BROKEN ENGINE</strong>The headache and the tight calves in the first few days are the pipes running dry. The factory is still running. It just needs the pipes kept full while it changes fuel.</li>
+      <li><strong>THE PINCH</strong>A pinch on your food, or a pinch in water. No big dose and no protocol. Keep the corridor full and let the factory do the rest.</li>
+      <li><strong>NOT MEDICINE</strong>Do not chase a number on the scale, and do not treat salt like a dose. It is the top-up the pipes need when the loading dock changes.</li>
     </ul>
     <button class="btn" data-watch="baja">WATCHED IT — UNLOCK THE BOX</button>
     <a class="btn ghost" href="#/app/shop" style="margin-top:8px;display:block">GET IT IN THE SHOP</a>
+    ${legal()}
   `,
     "videos"
   );
