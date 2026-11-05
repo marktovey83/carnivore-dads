@@ -475,3 +475,11 @@ a.btn.ghost { color: var(--bone); }
   font-size: 9.5px; letter-spacing: 0.12em; color: var(--ember); font-weight: 700;
 }
 .kit-row.locked .kit-plate small { color: var(--muted); }
+
+/* The Phase 1 intro: the first thing a man meets, above the kit list. */
+.intro-card { border: 1px solid #3a3228; }
+.intro-title {
+  font-family: Anton, "Arial Narrow", sans-serif; font-weight: 400;
+  font-size: 26px; line-height: 1; letter-spacing: 0.02em;
+  margin: 2px 0 12px; color: var(--bone);
+}

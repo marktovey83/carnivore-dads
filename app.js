@@ -256,6 +256,14 @@ function myBody(phase) {
       </div>`;
   }).join("");
   const kit = `
+    <div class="card intro-card">
+      <p class="field" style="margin-top:0">Start here</p>
+      <h3 class="intro-title">LEARN THE FACTORY.</h3>
+      <video class="lesson-video" controls preload="metadata" playsinline
+             src="./assets/phase1-intro.mp4"></video>
+      <p class="fine">1:02</p>
+      <p class="lede" style="margin:10px 0 0">Eleven systems, one loading dock, pipes that carry what the machines need, a warehouse of stored fat around the organs, and a processing station in the liver. Phase 1 is the baseline: the bloods so nobody is guessing, the scan so you can see the engine, your first morning readings, and the simple kit below.</p>
+    </div>
     <div class="split"><span class="field" style="margin:0">What you need</span><span class="badge">${owned} / ${KIT.length}</span></div>
     ${rows}
     <div class="split" style="margin-top:22px"><span class="field" style="margin:0">Your bloods</span><span class="badge">OPTIONAL</span></div>
