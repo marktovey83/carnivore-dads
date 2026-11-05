@@ -10,14 +10,36 @@ const COUNTRIES = [
 ];
 const TRADES = ["FIFO electrician", "Police", "Plumber / trades", "Truck / long haul", "Builder", "Office / desk", "Other"];
 const KIT = [
-  { id: "ketones", name: "Blood ketone meter and strips", href: "#/app/kit/ketone-meter" },
-  { id: "baja", name: "Mineralised salt", href: "#/app/kit/mineralised-salt" },
-  { id: "fish", name: "Fish oil" },
-  { id: "mag", name: "Magnesium glycinate" },
-  { id: "watch", name: "Smart watch with heart rate" },
-  { id: "gym", name: "Gym membership" },
+  // slug gives the item its lesson page. video is the file in assets/ once it
+  // exists; null means the lesson says so rather than pretending.
+  { id: "ketones", name: "Blood ketone meter and strips", slug: "ketone-meter", video: "phase1-ketone-meter.mp4" },
+  { id: "baja", name: "Mineralised salt", slug: "mineralised-salt", video: "phase1-mineralised-salt.mp4" },
+  { id: "fish", name: "Fish oil", slug: "fish-oil", video: null },
+  { id: "mag", name: "Magnesium glycinate", slug: "magnesium", video: null },
+  { id: "watch", name: "Smart watch with heart rate", slug: "smart-watch", video: null },
+  { id: "gym", name: "Gym membership", slug: "gym-membership", video: null },
   { id: "scan", name: "Body scan", href: "#/app/scan" },
 ];
+
+function kitItem(key) {
+  return KIT.find((k) => k.slug === key || k.id === key) || null;
+}
+
+/* The plate can only promise what is actually behind it. A play triangle on
+   all seven would have promised a video on four that have none, and on the
+   scan form. */
+function plateMark(item) {
+  if (item.href) return "OPEN";
+  if (item.video) return "WATCH";
+  return "SOON";
+}
+
+function plate(item) {
+  const mark = plateMark(item);
+  const to = item.href || `#/app/kit/${item.slug}`;
+  const verb = mark === "WATCH" ? "Watch" : mark === "OPEN" ? "Open" : "Read about";
+  return `<a href="${to}" class="kit-plate-link" aria-label="${verb} ${item.name}"><span class="kit-plate"><span class="cd-plate"><span>CD</span></span><small>${mark}</small></span></a>`;
+}
 const PHASE_NAMES = ["Knowing your body", "The dad bod", "The liver", "Advanced macros", "Graduate"];
 const LESSONS = [
   ["Your ketone meter", "Your smart watch", "Mineralised salt", "Fish oil", "Magnesium glycinate", "Gym and body scan", "Gut health", "Intro macros"],
@@ -219,11 +241,18 @@ function myBody(phase) {
   const rows = KIT.map((item) => {
     const watched = !!state.watched[item.id];
     const have = !!state.owned[item.id];
+    const hint = watched
+      ? "Tick it when it is in your hands."
+      : item.video
+        ? "Watch it first. It tells you which one to buy."
+        : item.href
+          ? "Open it when you have your numbers."
+          : "The lesson for this one is being made.";
     return `
       <div class="kit-row ${watched ? "" : "locked"}">
-        <button class="check ${have ? "on" : ""}" data-own="${item.id}">${have ? "✓" : ""}</button>
-        <div>${item.name}<div class="fine">${watched ? "Tick it when it is in your hands." : "Watch it first. It tells you which one to buy."}</div></div>
-        ${item.href ? `<a href="${item.href}"><div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div></a>` : `<button class="linkish" data-watch="${item.id}"><div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div></button>`}
+        <button class="check ${have ? "on" : ""}" data-own="${item.id}">${have ? "\u2713" : ""}</button>
+        <div>${item.name}<div class="fine">${hint}</div></div>
+        ${plate(item)}
       </div>`;
   }).join("");
   const kit = `
@@ -326,6 +355,28 @@ function scan() {
     <a class="btn ghost" href="#/app/factory" style="margin-top:8px;display:block">SEE THE FACTORY</a>
   `,
     "home"
+  );
+}
+
+function kitLesson(slug) {
+  if (slug === "ketone-meter") return ketoneMeter();
+  if (slug === "mineralised-salt" || slug === "baja-salt") return mineralisedSalt();
+  const item = kitItem(slug);
+  if (!item) return login();
+  return phone(
+    `
+    <p class="phase-tag">Phase 1 &middot; The kit</p>
+    <h2 class="display">${item.name.toUpperCase()}.</h2>
+    <div class="lesson-pending">
+      <p class="etk">BEING MADE</p>
+      <p>Still being filmed. When it lands it tells you which one to buy and what the factory needs it for, the same as the others.</p>
+    </div>
+    <p class="fine">Nothing is held up by a lesson that does not exist yet. Tick this off whenever it is in your hands.</p>
+    <button class="btn" data-watch="${item.id}">GOT IT &mdash; UNLOCK THE BOX</button>
+    <a class="btn ghost" href="#/app/my-body/1" style="margin-top:8px;display:block">BACK TO THE KIT</a>
+    ${legal()}
+  `,
+    "videos"
   );
 }
 
@@ -576,8 +627,7 @@ function route() {
   if (hash === "/app/phase-1") return myBody(1);
   if (hash === "/app/factory") return factory();
   if (hash === "/app/scan") return scan();
-  if (hash === "/app/kit/ketone-meter") return ketoneMeter();
-  if (hash === "/app/kit/mineralised-salt" || hash === "/app/kit/baja-salt") return mineralisedSalt();
+  if (hash.startsWith("/app/kit/")) return kitLesson(hash.slice("/app/kit/".length));
   if (hash === "/app/shop") return shop();
   if (hash === "/app/account") return account();
   if (hash === "/admin") return adminLogin();

@@ -464,3 +464,14 @@ a.btn.ghost { color: var(--bone); }
   padding: 18px 16px; margin: 4px 0 6px; background: #161616;
 }
 .lesson-pending p:last-child { margin: 8px 0 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+
+/* The plate says what is behind it. A play triangle on all seven would have
+   promised a video on four that have none and on the scan form. */
+.kit-plate-link { text-decoration: none; }
+.kit-plate { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.kit-plate .cd-plate { width: 40px; min-width: 40px; height: 27px; }
+.kit-plate .cd-plate span { font-size: 13px; }
+.kit-plate small {
+  font-size: 9.5px; letter-spacing: 0.12em; color: var(--ember); font-weight: 700;
+}
+.kit-row.locked .kit-plate small { color: var(--muted); }
