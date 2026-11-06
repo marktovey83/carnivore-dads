@@ -17,7 +17,7 @@ const KIT = [
   { id: "fish", name: "Fish oil", slug: "fish-oil", video: "phase1-fish-oil.mp4" },
   { id: "mag", name: "Magnesium glycinate", slug: "magnesium", video: "phase1-magnesium.mp4" },
   { id: "watch", name: "Smart watch with heart rate", slug: "smart-watch", video: "phase1-smart-watch.mp4" },
-  { id: "gym", name: "Gym membership", slug: "gym-membership", video: null },
+  { id: "gym", name: "Gym membership", slug: "gym-membership", video: "phase1-gym-membership.mp4" },
   { id: "scan", name: "Body scan", href: "#/app/scan" },
 ];
 
@@ -371,6 +371,7 @@ function kitLesson(slug) {
   if (slug === "fish-oil") return fishOil();
   if (slug === "magnesium") return magnesium();
   if (slug === "smart-watch") return smartWatch();
+  if (slug === "gym-membership") return gymMembership();
   if (slug === "mineralised-salt" || slug === "baja-salt") return mineralisedSalt();
   const item = kitItem(slug);
   if (!item) return login();
@@ -384,6 +385,32 @@ function kitLesson(slug) {
     </div>
     <p class="fine">Nothing is held up by a lesson that does not exist yet. Tick this off whenever it is in your hands.</p>
     <button class="btn" data-watch="${item.id}">GOT IT &mdash; UNLOCK THE BOX</button>
+    <a class="btn ghost" href="#/app/my-body/1" style="margin-top:8px;display:block">BACK TO THE KIT</a>
+    ${legal()}
+  `,
+    "videos"
+  );
+}
+
+function gymMembership() {
+  return phone(
+    `
+    <p class="phase-tag">Phase 1 &middot; The kit</p>
+    <h2 class="display">GYM MEMBERSHIP.</h2>
+    <video class="lesson-video" controls preload="metadata" playsinline
+           src="./assets/phase1-gym-membership.mp4"></video>
+    <p class="fine">1:16</p>
+    <p class="field">What the video covers</p>
+    <ul class="points">
+      <li><strong>SHOWING UP IS THE FIRST JOB</strong>The membership is not a twelve week plan. It is a place to build the habit of walking onto the floor.</li>
+      <li><strong>NOT A LIFTING PROGRAM</strong>The scan usually shows a big engine already there. It does not need heavy loads yet. It needs to run on the right fuel first.</li>
+      <li><strong>THAT IS THE REBUILD</strong>You show up, you keep the engine in zone two, and you let the cells grow more power plants.</li>
+      <li><strong>INSIDE, NOT OUTSIDE</strong>We are not painting the outside of the factory. We are resetting how it runs on the inside: the pipes, the fuel, the quiet systems.</li>
+      <li><strong>THE SAUNA IS HEAT WORK</strong>Heat makes the factory open the drains and move old waste out of the systems. Sweat is one of the ways the place clears what it no longer needs.</li>
+      <li><strong>NOT A MIRACLE</strong>It is another steady tool, the same as the rest of them.</li>
+      <li><strong>THE OUTSIDE FOLLOWS</strong>When the habit is solid and the engine is running clean, the outside starts to match. Not because of a short plan. Do not chase a twelve week transformation.</li>
+    </ul>
+    <button class="btn" data-watch="gym">WATCHED IT &mdash; UNLOCK THE BOX</button>
     <a class="btn ghost" href="#/app/my-body/1" style="margin-top:8px;display:block">BACK TO THE KIT</a>
     ${legal()}
   `,
