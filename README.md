@@ -80,6 +80,32 @@ Hash routes:
 - `#/app/ketones` · `#/app/videos` · `#/app/shop`
 - `#/admin` Staff
 
+## Phase 2: The Switch
+
+Formerly "The Dad Bod". Phase 1 has a gate card at the foot of the kit:
+his trade, a saved scan and five baseline readings. Bloods are asked for,
+not required. When all three are in, UNLOCK PHASE 2 opens it.
+
+`#/app/my-body/2` is The Switch: what changes at the dock, a GP warning for
+anyone on blood sugar or blood pressure medicine, his visceral number from
+the scan, the first-week salt and magnesium reminder, his last seven
+mornings, the five lessons (`#/app/lesson/2/<slug>`) and the Phase 3 gate.
+
+`#/app/ketones/2` logs mornings and handles random pings. Readings are
+tagged with the phase they were taken in, so the baseline stays the baseline.
+A ping falls due at a random time 12 to 42 hours after the last, in waking
+hours, and is never announced. There is no push service, so it shows the next
+time the app is open, and he then has 30 minutes to send the number and a
+photo of the meter. Clean means in time and at 0.5 or above. The photo is
+shrunk to a thumbnail and kept on the phone.
+
+Phase 2 → 3 gate: at least 7 days in Phase 2, 5 of the last 7 mornings at
+0.5 or above (a ping is not a morning), and 3 clean pings. When it is met the
+app says so; Phase 3 itself is not built yet, so it does not open.
+
+Lesson films for Phase 2 are not made yet. Each lesson page says so and
+carries the full script as text.
+
 ## The login is a door, not an auth check
 
 The lockup, the slogan, and two ways in: LOG IN opens My body, REGISTER opens

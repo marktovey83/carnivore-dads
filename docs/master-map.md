@@ -91,7 +91,7 @@ The "typical time" column is a **guide for the man, not a rule for the app**. Th
 | Phase | Title | Job of the phase | Typical time (guide only) | Scoreboard / gate |
 |---|---|---|---|---|
 | 1 | Knowing Your Body / Factory Reset | Login, kit, bloods, scan, watch, 3-morning ketone baseline, gut + macros videos | About a fortnight | Full profile + bloods + ketone baseline. Hard gate. |
-| 2 | The Dad Bod | Crash. Basic macros. Zone training starts. Alcohol sits here. Visceral fat made visible from the scan. | About a fortnight | Scheduled morning ketones + random in-app pings with photo deadline. |
+| 2 | The Switch | Crash. Basic macros. Zone training starts. Alcohol sits here. Visceral fat made visible from the scan. | About a fortnight | Scheduled morning ketones + random in-app pings with photo deadline. |
 | 3 | The Liver | Processing station. Intro fasting (structured, not heroic). Zones continue. | About a fortnight | Fasting locked behind Phase 2 ketone gate. Medical lane also needs GP-signed labs + written med plan. |
 | 4 | Advanced Macros | Timing, amounts, when carbs return and how the system switches back. Scan as a work list. Structured workouts start. | About a fortnight | Ketones still prove default fuel. Watch proves the work. Optional second scan is data, not a beauty contest. |
 | 5 | Graduation / The Room | Join the community. Not a victory photo. Factory stays open. | Ongoing | You leave with a portal, not a certificate. |
@@ -313,7 +313,7 @@ Phase teaching PDFs:
 
 - `Phase1_Knowing_Your_Body.pdf`
 - `Phase1_Factory_11_Systems.pdf`
-- `Phase2_The_Dad_Bod.pdf`
+- `Phase2_The_Dad_Bod.pdf` — **old name.** Phase 2 is now The Switch; re-title when the PDF is next cut.
 - `Phase3_The_Liver.pdf`
 - `Phase4_Advanced_Macros.pdf`
 - `Phase5_Graduation.pdf`
@@ -325,6 +325,11 @@ Plus body-comp plates, visceral plates, logos pack, founders title image + slide
 ---
 
 ## Change log
+
+**6 November 2026**
+
+- **Phase 2 renamed: The Dad Bod is now The Switch.** Same job: the dock changes fuel, the factory learns to run on the warehouse.
+- **Phase 2 built in the app.** Phase 1 gate (trade, scan, five baseline readings; bloods still optional) unlocks it. The Switch has its lessons (The switch, Basic macros, Zone training, Alcohol, Visceral fat), a GP warning for men on blood sugar or blood pressure medicine, the visceral number from his scan, a seven-morning strip, random pings with a 30-minute photo deadline, and the Phase 2 → 3 gate.
 
 **5 September 2026**
 

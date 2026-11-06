@@ -40,10 +40,10 @@ function plate(item) {
   const verb = mark === "WATCH" ? "Watch" : mark === "OPEN" ? "Open" : "Read about";
   return `<a href="${to}" class="kit-plate-link" aria-label="${verb} ${item.name}"><span class="kit-plate"><span class="cd-plate"><span>CD</span></span><small>${mark}</small></span></a>`;
 }
-const PHASE_NAMES = ["Knowing your body", "The dad bod", "The liver", "Advanced macros", "Graduate"];
+const PHASE_NAMES = ["Knowing your body", "The switch", "The liver", "Advanced macros", "Graduate"];
 const LESSONS = [
   ["Your ketone meter", "Your smart watch", "Mineralised salt", "Fish oil", "Magnesium glycinate", "Gym and body scan", "Gut health", "Intro macros"],
-  ["The crash", "Basic macros", "Zone training", "Alcohol", "Visceral fat"],
+  ["The switch", "Basic macros", "Zone training", "Alcohol", "Visceral fat"],
   ["The processing station", "Intro fasting", "Zones continued"],
   ["Timing and amounts", "When carbs come back", "Your scan as a work list", "Structured workouts"],
 ];
@@ -72,6 +72,11 @@ const defaults = {
   scan: { height: "180", weight: "95", bodyFat: "28", visceral: "12" },
   ketones: [],
   phase: 1,
+  // Phase 2. phase2At is when he opened it. pings are the random in-app checks;
+  // nextPingAt is when the next one is due, and is never shown to him.
+  phase2At: null,
+  pings: [],
+  nextPingAt: null,
 };
 
 function load() {
@@ -140,6 +145,7 @@ function phone(inner, tab) {
       <div class="phone">
         <div class="screen ${tab ? "with-tabs" : ""}">
           <a href="#/app/my-body">${lockup(!!tab)}</a>
+          ${tab ? pingBanner() : ""}
           ${inner}
         </div>
         ${tab ? tabs(tab) : ""}
@@ -231,8 +237,20 @@ function phaseShell(title, tab, phase, body) {
 /* The one line of state worth showing on a locked-or-not row. */
 function noteFor(title, n, locked) {
   if (locked || n === 5) return "";
-  if (title === "Ketones") return `${state.ketones.length} readings saved`;
-  if (title === "My body") return state.owned.scan ? "Scan saved" : "No scan saved yet";
+  if (n === 2) {
+    const g = gate3();
+    if (title === "Ketones") return `${readingsFor(2).length} readings · ${g.clean} of ${GATE3.pings} clean pings`;
+    if (title === "My body") return g.met ? "Phase 3 gate met" : `${g.good} of the last 7 mornings at ${GATE3.threshold}+`;
+    return `${PHASE2_LESSONS.length} lessons`;
+  }
+  if (title === "Ketones") return `${readingsFor(1).length} baseline readings saved`;
+  if (title === "My body") {
+    if (Number(state.phase) === 1) {
+      const left = gate2().items.filter((i) => !i.ok).length;
+      return left ? `${left} of 3 left before Phase 2` : "Phase 2 is ready to unlock";
+    }
+    return state.owned.scan ? "Scan saved" : "No scan saved yet";
+  }
   return "";
 }
 
@@ -276,11 +294,12 @@ function myBody(phase) {
       <p class="field" style="margin-top:0">Ketone baseline</p>
       <p class="lede" style="margin:0">Your starting readings stay with your Ketones record. Five tests, every second day.</p>
       <a class="btn ghost" href="#/app/ketones/1" style="margin-top:12px;display:block">OPEN BASELINE READINGS</a>
-    </div>`;
+    </div>
+    ${gate2Card()}`;
   const later = `
     <p class="lede">The work for this phase. Your scan and your lessons sit together here.</p>`;
   return phaseShell("My body", "home", phase, `
-    ${phase === 1 ? kit : later}
+    ${phase === 1 ? kit : phase === 2 ? phase2Body() : later}
     <div class="card">
       <p class="field" style="margin-top:0">Your scan</p>
       <p class="lede" style="margin:0">Your results exactly as the machine printed them. Reading a scan file automatically is not connected, so enter the numbers.</p>
@@ -289,7 +308,7 @@ function myBody(phase) {
     </div>
     <div class="card">
       <p class="field" style="margin-top:0">Learn</p>
-      <p class="lede" style="margin:0">${phase === 1 ? "Basic macros and Your body lessons live in your phase library." : "Open the lessons for this phase."}</p>
+      <p class="lede" style="margin:0">${phase === 1 ? "Basic macros and Your body lessons live in your phase library." : phase === 2 ? "Every Phase 2 lesson in one list." : "Open the lessons for this phase."}</p>
       <a class="btn ghost" href="#/app/videos/${phase}" style="margin-top:12px;display:block">OPEN PHASE VIDEOS</a>
     </div>
     ${legal()}
@@ -302,7 +321,7 @@ function factory() {
   const scale = 1 + (fat - 15) / 80;
   return phone(
     `
-    <p class="phase-tag">Phase 1</p>
+    <p class="phase-tag">Phase ${Number(state.phase) || 1}</p>
     <h2 class="display">THIS IS YOUR FACTORY.</h2>
     <p class="lede">Built from your scan. Not a stock photo, not a guess — your height, your weight, your numbers.</p>
     <p class="fine">FRONT / SCAN 001</p>
@@ -323,8 +342,11 @@ function factory() {
     <p class="field">What happens now</p>
     <div class="card">
       <strong>BLOOD KETONES</strong>
-      <p class="fine">Eat the way you eat now. Test first thing, five times, one every second day, and photograph each one. That is your before-photo, and it is what opens Phase 2.</p>
-      <a class="btn" href="#/app/ketones">LOG MY FIRST READING</a>
+      ${Number(state.phase) >= 2
+        ? `<p class="fine">Test first thing every morning. Most mornings at 0.5 or above across a week, plus three clean random pings, is what opens Phase 3.</p>
+      <a class="btn" href="#/app/ketones/2">LOG THIS MORNING</a>`
+        : `<p class="fine">Eat the way you eat now. Test first thing, five times, one every second day, and photograph each one. That is your before-photo, and it is what opens Phase 2.</p>
+      <a class="btn" href="#/app/ketones/1">LOG MY FIRST READING</a>`}
     </div>
   `,
     "home"
@@ -550,6 +572,12 @@ function mineralisedSalt() {
 }
 
 function videos(phase) {
+  if (phase === 2) {
+    return phaseShell("Videos", "videos", phase, `
+    <p class="lede">The films for Phase 2 are being made. Every lesson is here to read in the meantime.</p>
+    ${lessonRows()}
+  `);
+  }
   const list = LESSONS[phase - 1] || [];
   const rows = list.map((title) => `
       <div class="kit-row">
@@ -564,7 +592,8 @@ function videos(phase) {
 }
 
 function ketones(phase) {
-  const rows = state.ketones.map((k, i) => `
+  if (phase === 2) return phaseShell("Ketones", "ketones", phase, phase2Ketones());
+  const rows = readingsFor(1).map((k, i) => `
       <div class="kit-row">
         <div class="check on">${i + 1}</div>
         <div>${escapeHtml(k.mmol)} mmol/L<div class="fine">${new Date(k.at).toLocaleString()}</div></div>
@@ -577,7 +606,8 @@ function ketones(phase) {
     <label class="field">Morning reading (mmol/L)</label>
     <input id="mmol" placeholder="0.1" />
     <button class="btn" style="margin-top:12px" data-act="log-ketone">SAVE READING</button>
-    <p class="badge" style="margin-top:16px">${state.ketones.length}${phase === 1 ? " / 5" : ""}</p>
+    <p class="fine" id="mmol-msg" role="status"></p>
+    <p class="badge" style="margin-top:16px">${readingsFor(1).length}${phase === 1 ? " / 5" : ""}</p>
     ${rows}
     <p class="fine">A reading is a fact about right now, not a score. The dial is a scale, not a target.</p>
     <a class="btn ghost" href="#/app/kit/ketone-meter" style="margin-top:12px;display:block">WATCH: YOUR KETONE METER</a>
@@ -626,6 +656,426 @@ function account() {
     ${legal()}
   `, "account");
 }
+
+/* ---------------------------------------------------------------------------
+   Phase 2: The switch.
+
+   The factory changes fuel. The dock stops taking sugar and flour, and the
+   factory learns to run on what is already in the warehouse. The meter is how
+   he, and we, know it is happening: scheduled morning readings, plus random
+   in-app pings that need a photo of the meter before a deadline.
+--------------------------------------------------------------------------- */
+
+const DAY = 24 * 60 * 60 * 1000;
+const PING_WINDOW_MIN = 30; // minutes from the ping showing to the photo deadline
+const GATE2 = { baseline: 5 };
+const GATE3 = { days: 7, mornings: 5, threshold: 0.5, pings: 3 };
+
+/* Readings saved before phases were tracked belong to Phase 1. */
+function readingsFor(phase) {
+  return (state.ketones || []).filter((k) => (k.phase || 1) === phase);
+}
+
+function dayKey(t) {
+  const d = new Date(t);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+function startOfDay(t) {
+  const d = new Date(t);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+/* Phase 1 -> 2. Bloods are optional, so they are asked for, not required. */
+function gate2() {
+  const items = [
+    { ok: !!state.occupation, label: "Your trade", note: state.occupation || "Set it in Start your reset", href: "#/reset" },
+    { ok: !!state.owned.scan, label: "Your body scan", note: state.owned.scan ? "Saved" : "Not saved yet", href: "#/app/scan" },
+    {
+      ok: readingsFor(1).length >= GATE2.baseline,
+      label: "Ketone baseline",
+      note: `${Math.min(readingsFor(1).length, GATE2.baseline)} of ${GATE2.baseline} readings`,
+      href: "#/app/ketones/1",
+    },
+  ];
+  return { items, met: items.every((i) => i.ok) };
+}
+
+/* The last seven days, oldest first. Each day's first reading is his morning. */
+function week() {
+  const today = startOfDay(Date.now());
+  const start = state.phase2At ? startOfDay(state.phase2At) : today;
+  const first = {};
+  readingsFor(2)
+    .filter((k) => !k.ping) // a ping is a spot check, not his morning
+    .sort((a, b) => a.at - b.at)
+    .forEach((k) => {
+      const key = dayKey(k.at);
+      if (!(key in first)) first[key] = Number(k.mmol);
+    });
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const t = today - i * DAY;
+    const key = dayKey(t);
+    days.push({ t, before: t < start, mmol: key in first ? first[key] : null });
+  }
+  return days;
+}
+
+/* Phase 2 -> 3. One lucky reading is not the key: it is the week, and the pings. */
+function gate3() {
+  const days = state.phase2At ? Math.floor((startOfDay(Date.now()) - startOfDay(state.phase2At)) / DAY) + 1 : 0;
+  const wk = week();
+  const good = wk.filter((d) => d.mmol !== null && d.mmol >= GATE3.threshold).length;
+  const clean = (state.pings || []).filter((p) => p.clean).length;
+  const items = [
+    { ok: days >= GATE3.days, label: "A full week of data", note: `Day ${days} in Phase 2` },
+    { ok: good >= GATE3.mornings, label: `Most mornings at ${GATE3.threshold} or above`, note: `${good} of the last 7 (needs ${GATE3.mornings})` },
+    { ok: clean >= GATE3.pings, label: "Clean random pings", note: `${Math.min(clean, GATE3.pings)} of ${GATE3.pings}` },
+  ];
+  return { days, good, clean, items, met: items.every((i) => i.ok) };
+}
+
+function gateList(items) {
+  return items
+    .map(
+      (i) => `
+      <${i.href && !i.ok ? `a href="${i.href}"` : "div"} class="gate-row ${i.ok ? "ok" : ""}">
+        <span class="check ${i.ok ? "on" : ""}">${i.ok ? "✓" : ""}</span>
+        <span>${i.label}<span class="fine">${escapeHtml(i.note)}</span></span>
+      </${i.href && !i.ok ? "a" : "div"}>`
+    )
+    .join("");
+}
+
+function gate2Card() {
+  const g = gate2();
+  if (Number(state.phase) >= 2) {
+    return `
+    <div class="card gate-card">
+      <p class="field" style="margin-top:0">Phase 1 gate</p>
+      <p class="lede" style="margin:0">Met. Phase 2 is open.</p>
+      <a class="btn ghost" href="#/app/my-body/2" style="margin-top:12px;display:block">GO TO THE SWITCH</a>
+    </div>`;
+  }
+  return `
+    <div class="card gate-card">
+      <p class="field" style="margin-top:0">What opens Phase 2</p>
+      ${gateList(g.items)}
+      <p class="fine">Your bloods are not on this list. We still want them, but you do not have to wait on a doctor to switch.</p>
+      ${g.met
+        ? `<button class="btn" data-act="unlock-2" style="margin-top:8px">UNLOCK PHASE 2: THE SWITCH</button>`
+        : `<p class="fine" style="margin-bottom:0">When all three are ticked, the button to open Phase 2 appears here.</p>`}
+    </div>`;
+}
+
+function gate3Card() {
+  const g = gate3();
+  return `
+    <div class="card gate-card">
+      <p class="field" style="margin-top:0">What opens Phase 3</p>
+      ${gateList(g.items)}
+      ${g.met
+        ? `<p class="lede" style="margin:8px 0 0">Gate met. The liver is next, and the Phase 3 lessons are being built. Keep logging: the trend is still your record.</p>`
+        : `<p class="fine" style="margin-bottom:0">The calendar is not the scoreboard and neither are the scales. Some men get there in a week, some take three. A slow dad is not a failing dad.</p>`}
+    </div>`;
+}
+
+/* --- Random pings ------------------------------------------------------- */
+
+/* Somewhere between half a day and two days out, in waking hours. He is
+   never told when. */
+function nextPingTime(from) {
+  const t = new Date(from + (12 + Math.random() * 30) * 60 * 60 * 1000);
+  if (t.getHours() < 8 || t.getHours() >= 20) {
+    if (t.getHours() >= 20) t.setDate(t.getDate() + 1);
+    t.setHours(8 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 60), 0, 0);
+  }
+  return t.getTime();
+}
+
+function openPing() {
+  return (state.pings || []).find((p) => !p.done) || null;
+}
+
+/* There is no push service behind this yet, so a ping shows the next time the
+   app is open after it falls due, and the deadline runs from then. Returns
+   true when something changed. */
+function checkPings() {
+  if (Number(state.phase) !== 2) return false;
+  const now = Date.now();
+  const open = openPing();
+  if (open && now > open.deadline) {
+    state.pings = state.pings.map((p) => (p.id === open.id ? { ...p, done: true, missed: true } : p));
+    state.nextPingAt = nextPingTime(now);
+    localStorage.setItem(KEY, JSON.stringify(state));
+    return true;
+  }
+  if (!open && state.nextPingAt && now >= state.nextPingAt) {
+    state.pings = [...(state.pings || []), { id: now, firedAt: now, deadline: now + PING_WINDOW_MIN * 60 * 1000, done: false }];
+    state.nextPingAt = null;
+    localStorage.setItem(KEY, JSON.stringify(state));
+    return true;
+  }
+  return false;
+}
+
+function clock(t) {
+  return new Date(t).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+function pingBanner() {
+  const p = openPing();
+  if (!p || location.hash.startsWith("#/app/ketones/2")) return "";
+  return `
+    <a class="ping-banner" href="#/app/ketones/2">
+      <b>PING. TEST NOW.</b>
+      <span>Photo of the meter by ${clock(p.deadline)}</span>
+    </a>`;
+}
+
+function pingForm() {
+  const p = openPing();
+  if (!p) return "";
+  return `
+    <div class="card ping-card" id="ping">
+      <p class="phase-tag" style="margin-top:0">RANDOM PING</p>
+      <h3 class="intro-title">TEST NOW.</h3>
+      <p class="lede" style="margin:0 0 6px">Prick, read, and photograph the meter with the number on the screen. Photo by <b>${clock(p.deadline)}</b>.</p>
+      <label class="field">Reading (mmol/L)</label>
+      <input id="ping-mmol" inputmode="decimal" placeholder="0.8" />
+      <label class="field">Photo of the meter</label>
+      <input id="ping-photo" type="file" accept="image/*" capture="environment" />
+      <button class="btn" style="margin-top:12px" data-act="answer-ping">SEND THE PING</button>
+      <p class="fine" id="ping-msg" role="status"></p>
+    </div>`;
+}
+
+function pingHistory() {
+  const done = (state.pings || []).filter((p) => p.done).slice().reverse();
+  if (!done.length) return `<p class="fine">No pings yet. The first one lands some time in the next couple of days. You will not know when, which is the point.</p>`;
+  return done
+    .map((p) => {
+      const mark = p.missed ? "MISSED" : p.clean ? "CLEAN" : p.late ? "LATE" : "UNDER 0.5";
+      return `
+      <div class="kit-row">
+        ${p.photo ? `<img class="ping-thumb" src="${p.photo}" alt="Meter photo" />` : `<div class="ping-thumb empty"></div>`}
+        <div>${p.missed ? "No reading" : `${escapeHtml(p.mmol)} mmol/L`}<div class="fine">${new Date(p.firedAt).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })}</div></div>
+        <span class="badge ${p.clean ? "" : "dim"}">${mark}</span>
+      </div>`;
+    })
+    .join("");
+}
+
+/* A phone photo is megabytes. The record only needs proof, so keep it small. */
+function shrinkPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const max = 360;
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * k);
+      c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL("image/jpeg", 0.6));
+    };
+    img.onerror = () => reject(new Error("That file could not be read as a photo."));
+    img.src = url;
+  });
+}
+
+function parseMmol(raw) {
+  const n = Number(String(raw).replace(",", ".").trim());
+  if (!raw || !isFinite(n) || n < 0 || n > 10) return null;
+  return Math.round(n * 10) / 10;
+}
+
+/* --- Screens ------------------------------------------------------------ */
+
+function weekStrip() {
+  const letters = ["S", "M", "T", "W", "T", "F", "S"];
+  return `
+    <div class="week-strip" aria-label="Last seven mornings">
+      ${week()
+        .map((d) => {
+          const cls = d.before ? "before" : d.mmol === null ? "none" : d.mmol >= GATE3.threshold ? "hit" : "low";
+          return `<div class="day ${cls}"><small>${letters[new Date(d.t).getDay()]}</small><b>${d.mmol === null ? "&ndash;" : d.mmol.toFixed(1)}</b></div>`;
+        })
+        .join("")}
+    </div>
+    <p class="fine">Ember is a morning at ${GATE3.threshold} or above. Your first reading of the day counts as the morning.</p>`;
+}
+
+function phase2Body() {
+  const vis = state.scan.visceral;
+  return `
+    <div class="card intro-card">
+      <p class="field" style="margin-top:0">Start here</p>
+      <h3 class="intro-title">CHANGE THE FUEL.</h3>
+      <p class="lede" style="margin:0">Phase 1 was the before-photo. Phase 2 is where the factory changes fuel. The loading dock stops taking sugar and flour, and the factory learns to run on what is already stocked in the warehouse. Meat, eggs, fish and butter come in. The meter shows you when it is working.</p>
+    </div>
+    <div class="card warn-card">
+      <p class="field" style="margin-top:0">Before you switch</p>
+      <p class="lede" style="margin:0">If you take anything for blood sugar or blood pressure, or your GP has told you a medicine depends on what you eat, see your GP <b>before</b> you change fuel. Changing what comes through the dock changes how those medicines land. Your GP owns your medicine. We do not.</p>
+    </div>
+    <div class="card">
+      <p class="field" style="margin-top:0">Your warehouse</p>
+      <div class="split"><span class="lede" style="margin:0">Visceral fat, from your scan</span><b class="big-num">${escapeHtml(vis || "--")}</b></div>
+      <p class="fine">This is the fat packed around the organs. It sits closest to the pipes, so it is the first warehouse to open when the dock goes quiet. This is the part Phase 2 goes after.</p>
+      <a class="btn ghost" href="#/app/lesson/2/visceral-fat" style="margin-top:4px;display:block">WHAT THIS NUMBER MEANS</a>
+    </div>
+    <div class="card">
+      <p class="field" style="margin-top:0">The first few days</p>
+      <p class="lede" style="margin:0">Headache, flat, tight calves. That is the pipes running dry while the factory changes fuel, not a broken engine. Keep the salt and the magnesium going and eat until you are full. This is a fuel change, not a diet.</p>
+      <div class="row-btns" style="margin-top:12px">
+        <a class="btn ghost small" href="#/app/kit/mineralised-salt">SALT</a>
+        <a class="btn ghost small" href="#/app/kit/magnesium">MAGNESIUM</a>
+      </div>
+    </div>
+    <div class="split" style="margin-top:22px"><span class="field" style="margin:0">Your mornings</span><a class="badge" href="#/app/ketones/2">LOG ONE</a></div>
+    ${weekStrip()}
+    <div class="split" style="margin-top:22px"><span class="field" style="margin:0">The lessons</span><span class="badge">${PHASE2_LESSONS.length}</span></div>
+    ${lessonRows()}
+    ${gate3Card()}`;
+}
+
+function lessonRows() {
+  return PHASE2_LESSONS.map(
+    (l) => `
+      <a class="kit-row lesson-row" href="#/app/lesson/2/${l.slug}">
+        <div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div>
+        <div>${l.title}<div class="fine">${l.sub}</div></div>
+        <span class="fine">READ &rsaquo;</span>
+      </a>`
+  ).join("");
+}
+
+function phase2Ketones() {
+  const rows = readingsFor(2)
+    .slice()
+    .reverse()
+    .map(
+      (k) => `
+      <div class="kit-row">
+        <div class="check ${Number(k.mmol) >= GATE3.threshold ? "on" : ""}"></div>
+        <div>${escapeHtml(k.mmol)} mmol/L<div class="fine">${new Date(k.at).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</div></div>
+        <span></span>
+      </div>`
+    )
+    .join("");
+  return `
+    ${pingForm()}
+    <p class="lede">Test first thing every morning, before food and before coffee. The aim is most mornings at ${GATE3.threshold} mmol/L or above across a week. It is the trend that counts, not the best day.</p>
+    ${weekStrip()}
+    <label class="field">This morning's reading (mmol/L)</label>
+    <input id="mmol" inputmode="decimal" placeholder="0.6" />
+    <button class="btn" style="margin-top:12px" data-act="log-ketone">SAVE READING</button>
+    <p class="fine" id="mmol-msg" role="status"></p>
+    <div class="split" style="margin-top:22px"><span class="field" style="margin:0">Random pings</span><span class="badge">${gate3().clean} / ${GATE3.pings} CLEAN</span></div>
+    <p class="fine">Every so often the app asks you to test on the spot and photograph the meter within ${PING_WINDOW_MIN} minutes. A clean ping is a photo in time with ${GATE3.threshold} or above. It is how a morning number becomes a fact about your day.</p>
+    ${pingHistory()}
+    ${gate3Card()}
+    <div class="split" style="margin-top:22px"><span class="field" style="margin:0">Every reading</span><span class="badge">${readingsFor(2).length}</span></div>
+    ${rows || '<p class="fine">Nothing logged in Phase 2 yet.</p>'}
+    <p class="fine">Things that scramble a reading: ketone drinks, a big fast then a steak, a bad night, being crook, and some diabetes medicines. A reading means fat is on duty right now. Nothing more.</p>`;
+}
+
+function lesson(phase, slug) {
+  const l = PHASE2_LESSONS.find((x) => x.slug === slug);
+  if (phase !== 2 || !l || Number(state.phase) < 2) return myBody(null);
+  const i = PHASE2_LESSONS.indexOf(l);
+  const next = PHASE2_LESSONS[i + 1];
+  return phone(
+    `
+    <a class="linkish phase-back" href="#/app/my-body/2">&lsaquo; THE SWITCH</a>
+    <p class="phase-tag">Phase 2 &middot; Lesson ${i + 1} of ${PHASE2_LESSONS.length}</p>
+    <h2 class="display">${l.title.toUpperCase()}.</h2>
+    <div class="lesson-pending">
+      <p class="etk">FILM BEING MADE</p>
+      <p>The video for this one is still being made. Everything it will say is below.</p>
+    </div>
+    <ul class="points">
+      ${(typeof l.points === "function" ? l.points() : l.points).map(([h, t]) => `<li><strong>${h}</strong>${t}</li>`).join("")}
+    </ul>
+    ${next ? `<a class="btn" href="#/app/lesson/2/${next.slug}" style="margin-top:12px;display:block">NEXT: ${next.title.toUpperCase()}</a>` : `<a class="btn" href="#/app/ketones/2" style="margin-top:12px;display:block">LOG A MORNING</a>`}
+    <a class="btn ghost" href="#/app/my-body/2" style="margin-top:8px;display:block">BACK TO THE SWITCH</a>
+    ${legal()}
+  `,
+    "videos"
+  );
+}
+
+const PHASE2_LESSONS = [
+  {
+    slug: "the-switch",
+    title: "The switch",
+    sub: "What changes at the dock, and the first week",
+    points: [
+      ["THE DOCK STOPS TAKING SUGAR", "Bread, pasta, rice, cereal, sugar, juice and beer stop coming through the loading dock. Meat, eggs, fish and butter keep coming."],
+      ["THE NO NEW LOAD CALL", "With no sugar arriving, insulin falls. The gate on the warehouse opens and head office makes the call: run on what is in stock."],
+      ["THE FIRST WEEK IS NOISY", "Headache, flat, short-tempered, tight calves. That is the pipes running dry while the factory changes fuel. Salt and magnesium keep them full. It passes."],
+      ["DO NOT STARVE THE FACTORY", "Eat until you are full. This is a fuel change, not a calorie cut. Going very low on food scrambles the meter and makes the switch harder, not faster."],
+      ["THE METER SHOWS IT", "Mornings creep up from the 0.1 of your baseline toward 0.5 and past it. Some men see it in days, some take a couple of weeks. Both are normal."],
+      ["YOUR GP STAYS IN THE LOOP", "If you take anything for blood sugar or blood pressure, see your GP before you switch. Changing fuel changes how those medicines land. That is their call, not ours."],
+    ],
+  },
+  {
+    slug: "basic-macros",
+    title: "Basic macros",
+    sub: "Protein, fat, and what you stop sending in",
+    points: [
+      ["PROTEIN IS THE BUILDING MATERIAL", "Amino acids are what every machine in the factory is built and repaired from. Every plate starts with meat, fish or eggs."],
+      ["FAT IS THE FUEL", "The fat that comes with the meat is what the factory runs on now. Do not trim it off and do not fear butter."],
+      ["CARBS ARE THE FUEL YOU STOP SENDING", "Not banned for life. They are instant fuel for athletes on the clock, not for a dad running a steady day. They come back in Phase 4, on purpose, once the factory knows how to switch."],
+      ["FULL, THEN STOP", "No weighing, no counting grams in an app. Eat until you are full and stop there. The factory tells you when the dock is stocked."],
+      ["THE FAMILY TABLE", "Same meat as everyone else at the table. You do not need your own kitchen. Leave the bread and the potatoes for them and double up on what is on the board."],
+      ["SEED OILS STAY OUT", "Cook in butter, tallow or the fat off the meat. The seed oil bottle went in the bin in Phase 1. It stays there."],
+    ],
+  },
+  {
+    slug: "zone-training",
+    title: "Zone training",
+    sub: "Zone two, and why easy is the point",
+    points: [
+      ["THE GAUGE IS YOUR WATCH", "Zone two is the steady cruise: a pace where you can still talk in full sentences. If you can only get a few words out, ease off."],
+      ["WHY EASY, WHY NOW", "Hard sprints call for instant fuel, the kind the dock is no longer sending. Easy, steady work is done on fat. That is the fuel the factory is learning to use."],
+      ["MORE POWER PLANTS", "Time in zone two is when the cells grow more of their own power plants. That is what fat adaptation is built from."],
+      ["HOW MUCH", "Three or four sessions a week is plenty to start. A brisk walk counts. An easy bike counts. Showing up counts most."],
+      ["WEIGHTS STILL WAIT", "Structured lifting comes in Phase 4, on an engine that already runs on fat. Do not turn the switch into a bodybuilding block."],
+      ["PROOF, NOT A SCORE", "The watch is the record that the work got done. It is not a leaderboard."],
+    ],
+  },
+  {
+    slug: "alcohol",
+    title: "Alcohol",
+    sub: "Why a Friday night prints on Monday's meter",
+    points: [
+      ["THE LIVER DROPS EVERYTHING", "To the processing station, alcohol is a hazard that has to be cleared first. Everything else waits, and that includes turning fat into ketones."],
+      ["FRIDAY PRINTS ON MONDAY", "A big night stalls the switch for days, not hours. You will see it on the meter. That is the meter doing its job."],
+      ["BEER IS LIQUID BREAD", "It brings the alcohol and the sugar through the dock at the same time. Two stalls for the price of one."],
+      ["A STALL, NOT A SIN", "This is not a lecture and it is not a life ban. While you are switching it holds you up, and that is the only reason it sits in Phase 2."],
+      ["LOG IT HONESTLY", "If you had a drink, test anyway and log the number. A low reading with a reason is useful. A missing reading is not."],
+      ["IF STOPPING IS HARD", "If going without is harder than you expected, that is a conversation for your GP, not a test of willpower. Plenty of men have it."],
+    ],
+  },
+  {
+    slug: "visceral-fat",
+    title: "Visceral fat",
+    sub: "The warehouse around the organs",
+    points: () => [
+      ["TWO KINDS OF STORE", "The fat you can pinch sits under the skin. Visceral fat is packed in around the organs: the hard belly that pushes the belt out. They are not the same store."],
+      ["THE FIRST WAREHOUSE", "Visceral fat sits closest to the pipes, so it is the first warehouse that opens when the dock goes quiet. It is what Phase 2 goes after."],
+      ["YOUR NUMBER", state.scan.visceral ? `Your scan put your visceral fat at ${escapeHtml(state.scan.visceral)}. That is your starting line. It is a number from a machine, not a grade.` : "Your scan does not have a visceral number saved. Some machines do not print one. Add it if yours does."],
+      ["THE BELT, NOT THE SCALES", "The scales cannot tell the two stores apart. Your waist can. If the belt moves and the scales do not, the factory is doing its job."],
+      ["WHY IT MATTERS", "This is the fat that crowds the liver and the organs and gets in the way of the factory's work. Opening that warehouse is the whole point of the switch."],
+      ["NOT A BEAUTY CONTEST", "An optional second scan comes later, as data. Not a before-and-after photo."],
+    ],
+  },
+];
 
 function adminTop() {
   return `
@@ -686,7 +1136,7 @@ function clients() {
 
 function clientFile(id) {
   const c = CLIENTS.find((x) => x.id === id) || CLIENTS[0];
-  const phases = ["Knowing your body", "The Dad Bod", "The Liver", "Advanced macros", "The Room"];
+  const phases = ["Knowing your body", "The Switch", "The Liver", "Advanced macros", "The Room"];
   return `
     <div class="admin">
       ${adminTop()}
@@ -741,6 +1191,8 @@ function route() {
     return videos(open);
   }
   if (hash === "/app/phase-1") return myBody(1);
+  const les = hash.match(/^\/app\/lesson\/(\d)\/([a-z-]+)$/);
+  if (les) return lesson(Number(les[1]), les[2]);
   if (hash === "/app/factory") return factory();
   if (hash === "/app/scan") return scan();
   if (hash.startsWith("/app/kit/")) return kitLesson(hash.slice("/app/kit/".length));
@@ -770,7 +1222,12 @@ function bind() {
       const n = Number(btn.getAttribute("data-locked"));
       const note = document.getElementById("phase-note");
       if (!note) return;
-      note.textContent = `${n === 5 ? "Graduate" : "Phase " + n} opens after the phase before it.`;
+      note.textContent =
+        n === 2
+          ? "Phase 2 opens when your trade, your scan and five baseline readings are in. Open Phase 1 to see what is left."
+          : n === 3
+            ? "Phase 3 opens when the Phase 2 gate is met: most mornings at 0.5 or above across a week, and three clean pings."
+            : `${n === 5 ? "Graduate" : "Phase " + n} opens after the phase before it.`;
       note.hidden = false;
     };
   });
@@ -822,15 +1279,53 @@ function bind() {
       location.hash = "#/app/factory";
     }
     if (kind === "log-ketone") {
-      const mmol = val("mmol");
-      if (!mmol) return;
-      save({ ketones: [...state.ketones, { mmol, at: Date.now() }] });
+      const mmol = parseMmol(val("mmol"));
+      const msg = document.getElementById("mmol-msg");
+      if (mmol === null) {
+        if (msg) msg.textContent = "Type the number off the meter, like 0.6.";
+        return;
+      }
+      // Readings land in the phase he is in, so the baseline stays the baseline.
+      save({ ketones: [...state.ketones, { mmol: String(mmol), at: Date.now(), phase: Number(state.phase) || 1 }] });
+    }
+    if (kind === "unlock-2") {
+      if (!gate2().met) return;
+      const now = Date.now();
+      save({ phase: 2, phase2At: now, nextPingAt: nextPingTime(now) });
+      location.hash = "#/app/my-body/2";
+    }
+    if (kind === "answer-ping") {
+      const p = openPing();
+      const msg = document.getElementById("ping-msg");
+      const mmol = parseMmol(val("ping-mmol"));
+      const file = document.getElementById("ping-photo")?.files?.[0];
+      if (!p) return;
+      if (mmol === null) return void (msg.textContent = "Type the number off the meter, like 0.8.");
+      if (!file) return void (msg.textContent = "The photo is the point. Take one of the meter showing the number.");
+      act.disabled = true;
+      msg.textContent = "Saving the photo…";
+      shrinkPhoto(file)
+        .then((photo) => {
+          const now = Date.now();
+          const late = now > p.deadline;
+          const done = { ...p, done: true, mmol: String(mmol), photo, answeredAt: now, late, clean: !late && mmol >= GATE3.threshold };
+          save({
+            pings: state.pings.map((x) => (x.id === p.id ? done : x)),
+            ketones: [...state.ketones, { mmol: String(mmol), at: now, phase: 2, ping: true }],
+            nextPingAt: nextPingTime(now),
+          });
+        })
+        .catch((err) => {
+          act.disabled = false;
+          msg.textContent = err.message;
+        });
     }
     };
   });
 }
 
 function render() {
+  checkPings();
   const root = document.getElementById("root");
   try {
     root.innerHTML = route();
@@ -842,3 +1337,8 @@ function render() {
 
 window.addEventListener("hashchange", render);
 render();
+// A ping can fall due, or run out, while the app is open. Only redraw when it
+// does, so a half-typed reading is not wiped.
+setInterval(() => {
+  if (checkPings()) render();
+}, 20000);

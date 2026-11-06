@@ -123,7 +123,7 @@ export function ClientFile() {
           <button className="btn small ghost">SEND KETONE NUDGE</button>
         </div>
         <div className="map-grid">
-          {["Knowing your body", "The Dad Bod", "The Liver", "Advanced macros", "The Room"].map((title, i) => {
+          {["Knowing your body", "The Switch", "The Liver", "Advanced macros", "The Room"].map((title, i) => {
             const n = i + 1;
             const state = n < c.phase ? "DONE" : n === c.phase ? `DAY ${c.day}` : "LOCKED";
             return (
