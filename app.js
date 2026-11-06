@@ -16,7 +16,7 @@ const KIT = [
   { id: "baja", name: "Mineralised salt", slug: "mineralised-salt", video: "phase1-mineralised-salt.mp4" },
   { id: "fish", name: "Fish oil", slug: "fish-oil", video: "phase1-fish-oil.mp4" },
   { id: "mag", name: "Magnesium glycinate", slug: "magnesium", video: "phase1-magnesium.mp4" },
-  { id: "watch", name: "Smart watch with heart rate", slug: "smart-watch", video: null },
+  { id: "watch", name: "Smart watch with heart rate", slug: "smart-watch", video: "phase1-smart-watch.mp4" },
   { id: "gym", name: "Gym membership", slug: "gym-membership", video: null },
   { id: "scan", name: "Body scan", href: "#/app/scan" },
 ];
@@ -370,6 +370,7 @@ function kitLesson(slug) {
   if (slug === "ketone-meter") return ketoneMeter();
   if (slug === "fish-oil") return fishOil();
   if (slug === "magnesium") return magnesium();
+  if (slug === "smart-watch") return smartWatch();
   if (slug === "mineralised-salt" || slug === "baja-salt") return mineralisedSalt();
   const item = kitItem(slug);
   if (!item) return login();
@@ -384,6 +385,32 @@ function kitLesson(slug) {
     <p class="fine">Nothing is held up by a lesson that does not exist yet. Tick this off whenever it is in your hands.</p>
     <button class="btn" data-watch="${item.id}">GOT IT &mdash; UNLOCK THE BOX</button>
     <a class="btn ghost" href="#/app/my-body/1" style="margin-top:8px;display:block">BACK TO THE KIT</a>
+    ${legal()}
+  `,
+    "videos"
+  );
+}
+
+function smartWatch() {
+  return phone(
+    `
+    <p class="phase-tag">Phase 1 &middot; The kit</p>
+    <h2 class="display">YOUR SMART WATCH.</h2>
+    <video class="lesson-video" controls preload="metadata" playsinline
+           src="./assets/phase1-smart-watch.mp4"></video>
+    <p class="fine">1:14</p>
+    <p class="field">What the video covers</p>
+    <ul class="points">
+      <li><strong>EVERY ENGINE NEEDS A GAUGE</strong>The heart rate monitor is that gauge. It shows you how hard the factory is working, in real time.</li>
+      <li><strong>ZONE TWO IS THE STEADY CRUISE</strong>Not a sprint and not a max effort. A pace where you can still talk.</li>
+      <li><strong>WHAT THE ZONE BUILDS</strong>In there the factory learns to burn fat cleanly, and the cells grow more of their own power plants. More engines inside the cells. That is how fat adaptation gets built.</li>
+      <li><strong>QUIET, STEADY, REPEATED</strong>That is the whole method. It is not meant to feel like much.</li>
+      <li><strong>PHASE 1 IS NOT A LIFTING PROGRAM</strong>The scan usually shows a big engine already there. It does not need new heavy loads yet. It needs to run on the right fuel.</li>
+      <li><strong>YOUR JOB IS TO SHOW UP</strong>Walk, easy bike, light movement that keeps the gauge in the right range. Build the habit.</li>
+      <li><strong>WEIGHTS COME LATER</strong>Structured weights come in once the factory is adapted. Not now. Do not chase a personal best and do not turn Phase 1 into a bodybuilding plan.</li>
+    </ul>
+    <button class="btn" data-watch="watch">WATCHED IT &mdash; UNLOCK THE BOX</button>
+    <a class="btn ghost" href="#/app/shop" style="margin-top:8px;display:block">GET IT IN THE SHOP</a>
     ${legal()}
   `,
     "videos"
