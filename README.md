@@ -86,10 +86,17 @@ Formerly "The Dad Bod". Phase 1 has a gate card at the foot of the kit:
 his trade, a saved scan and five baseline readings. Bloods are asked for,
 not required. When all three are in, UNLOCK PHASE 2 opens it.
 
-`#/app/my-body/2` is The Switch: what changes at the dock, a GP warning for
-anyone on blood sugar or blood pressure medicine, his visceral number from
-the scan, the first-week salt and magnesium reminder, his last seven
-mornings, the five lessons (`#/app/lesson/2/<slug>`) and the Phase 3 gate.
+`#/app/my-body/2` is The Switch, laid out like Phase 1: the intro film at
+the top (`PHASE2_INTRO_VIDEO`, a placeholder until it is filmed), then four
+lessons he ticks off the way he ticks off the kit: Sugar, Macros, Gut health,
+Cells (`#/app/lesson/2/<slug>`). Each lesson's `video` field takes its file
+in `assets/` once filmed, and the plate turns from READ to WATCH. Below the
+lessons: a GP warning for anyone on blood sugar or blood pressure medicine,
+the first-week salt and magnesium reminder, his last seven mornings, his
+visceral number from the scan, and the Phase 3 gate.
+
+Alcohol is folded into Sugar and zone training into Cells. The visceral fat
+page is opened from the warehouse card rather than the list.
 
 `#/app/ketones/2` logs mornings and handles random pings. Readings are
 tagged with the phase they were taken in, so the baseline stays the baseline.
@@ -104,7 +111,7 @@ Phase 2 → 3 gate: at least 7 days in Phase 2, 5 of the last 7 mornings at
 app says so; Phase 3 itself is not built yet, so it does not open.
 
 Lesson films for Phase 2 are not made yet. Each lesson page says so and
-carries the full script as text.
+carries the full script as text, so the films can be made from it.
 
 ## The login is a door, not an auth check
 

@@ -91,7 +91,7 @@ The "typical time" column is a **guide for the man, not a rule for the app**. Th
 | Phase | Title | Job of the phase | Typical time (guide only) | Scoreboard / gate |
 |---|---|---|---|---|
 | 1 | Knowing Your Body / Factory Reset | Login, kit, bloods, scan, watch, 3-morning ketone baseline, gut + macros videos | About a fortnight | Full profile + bloods + ketone baseline. Hard gate. |
-| 2 | The Switch | Crash. Basic macros. Zone training starts. Alcohol sits here. Visceral fat made visible from the scan. | About a fortnight | Scheduled morning ketones + random in-app pings with photo deadline. |
+| 2 | The Switch | Intro film, then four lessons: Sugar, Macros, Gut health, Cells. Zone training starts (in Cells). Alcohol sits here (in Sugar). Visceral fat made visible from the scan. | About a fortnight | Scheduled morning ketones + random in-app pings with photo deadline. |
 | 3 | The Liver | Processing station. Intro fasting (structured, not heroic). Zones continue. | About a fortnight | Fasting locked behind Phase 2 ketone gate. Medical lane also needs GP-signed labs + written med plan. |
 | 4 | Advanced Macros | Timing, amounts, when carbs return and how the system switches back. Scan as a work list. Structured workouts start. | About a fortnight | Ketones still prove default fuel. Watch proves the work. Optional second scan is data, not a beauty contest. |
 | 5 | Graduation / The Room | Join the community. Not a victory photo. Factory stays open. | Ongoing | You leave with a portal, not a certificate. |

@@ -43,7 +43,7 @@ function plate(item) {
 const PHASE_NAMES = ["Knowing your body", "The switch", "The liver", "Advanced macros", "Graduate"];
 const LESSONS = [
   ["Your ketone meter", "Your smart watch", "Mineralised salt", "Fish oil", "Magnesium glycinate", "Gym and body scan", "Gut health", "Intro macros"],
-  ["The switch", "Basic macros", "Zone training", "Alcohol", "Visceral fat"],
+  ["Sugar", "Macros", "Gut health", "Cells"],
   ["The processing station", "Intro fasting", "Zones continued"],
   ["Timing and amounts", "When carbs come back", "Your scan as a work list", "Structured workouts"],
 ];
@@ -75,6 +75,7 @@ const defaults = {
   // Phase 2. phase2At is when he opened it. pings are the random in-app checks;
   // nextPingAt is when the next one is due, and is never shown to him.
   phase2At: null,
+  done2: {}, // Phase 2 lessons he has ticked off
   pings: [],
   nextPingAt: null,
 };
@@ -241,7 +242,7 @@ function noteFor(title, n, locked) {
     const g = gate3();
     if (title === "Ketones") return `${readingsFor(2).length} readings · ${g.clean} of ${GATE3.pings} clean pings`;
     if (title === "My body") return g.met ? "Phase 3 gate met" : `${g.good} of the last 7 mornings at ${GATE3.threshold}+`;
-    return `${PHASE2_LESSONS.length} lessons`;
+    return `${PHASE2_LESSONS.filter((l) => (state.done2 || {})[l.slug]).length} of ${PHASE2_LESSONS.length} lessons done`;
   }
   if (title === "Ketones") return `${readingsFor(1).length} baseline readings saved`;
   if (title === "My body") {
@@ -910,23 +911,27 @@ function weekStrip() {
     <p class="fine">Ember is a morning at ${GATE3.threshold} or above. Your first reading of the day counts as the morning.</p>`;
 }
 
+/* The Switch opens the way Phase 1 does: the intro film at the top, then the
+   lessons as a list he ticks off, then the rest of the phase's work. */
+const PHASE2_INTRO_VIDEO = null; // "phase2-intro.mp4" once it is filmed
+
 function phase2Body() {
   const vis = state.scan.visceral;
+  const done = PHASE2_LESSONS.filter((l) => (state.done2 || {})[l.slug]).length;
   return `
     <div class="card intro-card">
       <p class="field" style="margin-top:0">Start here</p>
       <h3 class="intro-title">CHANGE THE FUEL.</h3>
-      <p class="lede" style="margin:0">Phase 1 was the before-photo. Phase 2 is where the factory changes fuel. The loading dock stops taking sugar and flour, and the factory learns to run on what is already stocked in the warehouse. Meat, eggs, fish and butter come in. The meter shows you when it is working.</p>
+      ${PHASE2_INTRO_VIDEO
+        ? `<video class="lesson-video" controls preload="metadata" playsinline src="./assets/${PHASE2_INTRO_VIDEO}"></video>`
+        : `<div class="lesson-pending"><p class="etk">FILM BEING MADE</p><p>The intro film for The Switch is still being made.</p></div>`}
+      <p class="lede" style="margin:10px 0 0">Phase 1 was the before-photo. Phase 2 is where the factory changes fuel. The loading dock stops taking sugar, and the cells learn to run on what is already stocked in the warehouse. Four lessons below, then your mornings on the meter.</p>
     </div>
-    <div class="card warn-card">
+    <div class="split"><span class="field" style="margin:0">Your lessons</span><span class="badge">${done} / ${PHASE2_LESSONS.length}</span></div>
+    ${lessonRows()}
+    <div class="card warn-card" style="margin-top:22px">
       <p class="field" style="margin-top:0">Before you switch</p>
       <p class="lede" style="margin:0">If you take anything for blood sugar or blood pressure, or your GP has told you a medicine depends on what you eat, see your GP <b>before</b> you change fuel. Changing what comes through the dock changes how those medicines land. Your GP owns your medicine. We do not.</p>
-    </div>
-    <div class="card">
-      <p class="field" style="margin-top:0">Your warehouse</p>
-      <div class="split"><span class="lede" style="margin:0">Visceral fat, from your scan</span><b class="big-num">${escapeHtml(vis || "--")}</b></div>
-      <p class="fine">This is the fat packed around the organs. It sits closest to the pipes, so it is the first warehouse to open when the dock goes quiet. This is the part Phase 2 goes after.</p>
-      <a class="btn ghost" href="#/app/lesson/2/visceral-fat" style="margin-top:4px;display:block">WHAT THIS NUMBER MEANS</a>
     </div>
     <div class="card">
       <p class="field" style="margin-top:0">The first few days</p>
@@ -938,20 +943,28 @@ function phase2Body() {
     </div>
     <div class="split" style="margin-top:22px"><span class="field" style="margin:0">Your mornings</span><a class="badge" href="#/app/ketones/2">LOG ONE</a></div>
     ${weekStrip()}
-    <div class="split" style="margin-top:22px"><span class="field" style="margin:0">The lessons</span><span class="badge">${PHASE2_LESSONS.length}</span></div>
-    ${lessonRows()}
+    <div class="card">
+      <p class="field" style="margin-top:0">Your warehouse</p>
+      <div class="split"><span class="lede" style="margin:0">Visceral fat, from your scan</span><b class="big-num">${escapeHtml(vis || "--")}</b></div>
+      <p class="fine">The fat packed around the organs. It sits closest to the pipes, so it is the first warehouse to open when the dock goes quiet. This is the part Phase 2 goes after.</p>
+      <a class="btn ghost" href="#/app/lesson/2/visceral-fat" style="margin-top:4px;display:block">WHAT THIS NUMBER MEANS</a>
+    </div>
     ${gate3Card()}`;
 }
 
+/* Same row as the Phase 1 kit: tick, name and hint, then the CD plate that
+   opens the lesson. The plate only says WATCH when there is a film. */
 function lessonRows() {
-  return PHASE2_LESSONS.map(
-    (l) => `
-      <a class="kit-row lesson-row" href="#/app/lesson/2/${l.slug}">
-        <div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div>
-        <div>${l.title}<div class="fine">${l.sub}</div></div>
-        <span class="fine">READ &rsaquo;</span>
-      </a>`
-  ).join("");
+  return PHASE2_LESSONS.map((l) => {
+    const done = !!(state.done2 || {})[l.slug];
+    const mark = l.video ? "WATCH" : "READ";
+    return `
+      <div class="kit-row">
+        <span class="check ${done ? "on" : ""}" aria-label="${done ? "Done" : "Not done"}">${done ? "✓" : ""}</span>
+        <div>${l.title}<div class="fine">${done ? "Done. Open it again any time." : l.sub}</div></div>
+        <a href="#/app/lesson/2/${l.slug}" class="kit-plate-link" aria-label="${mark === "WATCH" ? "Watch" : "Read"} ${l.title}"><span class="kit-plate"><span class="cd-plate"><span>CD</span></span><small>${mark}</small></span></a>
+      </div>`;
+  }).join("");
 }
 
 function phase2Ketones() {
@@ -984,24 +997,35 @@ function phase2Ketones() {
     <p class="fine">Things that scramble a reading: ketone drinks, a big fast then a steak, a bad night, being crook, and some diabetes medicines. A reading means fat is on duty right now. Nothing more.</p>`;
 }
 
+/* Old lesson addresses from the first cut of Phase 2, folded into the four. */
+const LESSON_ALIASES = { "the-switch": "sugar", alcohol: "sugar", "basic-macros": "macros", "zone-training": "cells" };
+
 function lesson(phase, slug) {
-  const l = PHASE2_LESSONS.find((x) => x.slug === slug);
+  slug = LESSON_ALIASES[slug] || slug;
+  const all = [...PHASE2_LESSONS, ...PHASE2_EXTRA];
+  const l = all.find((x) => x.slug === slug);
   if (phase !== 2 || !l || Number(state.phase) < 2) return myBody(null);
   const i = PHASE2_LESSONS.indexOf(l);
-  const next = PHASE2_LESSONS[i + 1];
+  const main = i >= 0;
+  const next = main ? PHASE2_LESSONS[i + 1] : null;
+  const done = !!(state.done2 || {})[l.slug];
   return phone(
     `
     <a class="linkish phase-back" href="#/app/my-body/2">&lsaquo; THE SWITCH</a>
-    <p class="phase-tag">Phase 2 &middot; Lesson ${i + 1} of ${PHASE2_LESSONS.length}</p>
+    <p class="phase-tag">Phase 2 &middot; ${main ? `Lesson ${i + 1} of ${PHASE2_LESSONS.length}` : "Your scan"}</p>
     <h2 class="display">${l.title.toUpperCase()}.</h2>
-    <div class="lesson-pending">
-      <p class="etk">FILM BEING MADE</p>
-      <p>The video for this one is still being made. Everything it will say is below.</p>
-    </div>
+    ${l.video
+      ? `<video class="lesson-video" controls preload="metadata" playsinline src="./assets/${l.video}"></video>`
+      : `<div class="lesson-pending"><p class="etk">FILM BEING MADE</p><p>The video for this one is still being made. Everything it will say is below.</p></div>`}
+    <p class="field">What the ${l.video ? "video" : "lesson"} covers</p>
     <ul class="points">
       ${(typeof l.points === "function" ? l.points() : l.points).map(([h, t]) => `<li><strong>${h}</strong>${t}</li>`).join("")}
     </ul>
-    ${next ? `<a class="btn" href="#/app/lesson/2/${next.slug}" style="margin-top:12px;display:block">NEXT: ${next.title.toUpperCase()}</a>` : `<a class="btn" href="#/app/ketones/2" style="margin-top:12px;display:block">LOG A MORNING</a>`}
+    ${main
+      ? done
+        ? `<p class="fine">Ticked off.</p>${next ? `<a class="btn" href="#/app/lesson/2/${next.slug}" style="margin-top:8px;display:block">NEXT: ${next.title.toUpperCase()}</a>` : ""}`
+        : `<button class="btn" data-done2="${l.slug}" data-next="${next ? next.slug : ""}">${l.video ? "WATCHED IT" : "READ IT"} &mdash; TICK IT OFF</button>`
+      : ""}
     <a class="btn ghost" href="#/app/my-body/2" style="margin-top:8px;display:block">BACK TO THE SWITCH</a>
     ${legal()}
   `,
@@ -1009,69 +1033,77 @@ function lesson(phase, slug) {
   );
 }
 
+/* video is the file in assets/ once it is filmed, e.g. "phase2-sugar.mp4". */
 const PHASE2_LESSONS = [
   {
-    slug: "the-switch",
-    title: "The switch",
-    sub: "What changes at the dock, and the first week",
+    slug: "sugar",
+    title: "Sugar",
+    sub: "What stops coming through the dock, and why",
+    video: null,
     points: [
-      ["THE DOCK STOPS TAKING SUGAR", "Bread, pasta, rice, cereal, sugar, juice and beer stop coming through the loading dock. Meat, eggs, fish and butter keep coming."],
+      ["THE DOCK STOPS TAKING SUGAR", "Sugar, bread, pasta, rice, cereal, potatoes and juice stop coming through the loading dock. Meat, eggs, fish and butter keep coming."],
+      ["SUGAR WEARS DISGUISES", "Bread, rice and pasta are not sweet, but by the time they reach the pipes they are sugar all the same. The dock cannot tell a slice of toast from a spoon of sugar."],
       ["THE NO NEW LOAD CALL", "With no sugar arriving, insulin falls. The gate on the warehouse opens and head office makes the call: run on what is in stock."],
       ["THE FIRST WEEK IS NOISY", "Headache, flat, short-tempered, tight calves. That is the pipes running dry while the factory changes fuel. Salt and magnesium keep them full. It passes."],
-      ["DO NOT STARVE THE FACTORY", "Eat until you are full. This is a fuel change, not a calorie cut. Going very low on food scrambles the meter and makes the switch harder, not faster."],
-      ["THE METER SHOWS IT", "Mornings creep up from the 0.1 of your baseline toward 0.5 and past it. Some men see it in days, some take a couple of weeks. Both are normal."],
+      ["BEER IS LIQUID BREAD", "Beer brings sugar and alcohol through the dock together. The liver clears alcohol before anything else, and that includes making ketones. A Friday night prints on Monday's meter."],
       ["YOUR GP STAYS IN THE LOOP", "If you take anything for blood sugar or blood pressure, see your GP before you switch. Changing fuel changes how those medicines land. That is their call, not ours."],
     ],
   },
   {
-    slug: "basic-macros",
-    title: "Basic macros",
-    sub: "Protein, fat, and what you stop sending in",
+    slug: "macros",
+    title: "Macros",
+    sub: "Protein, fat, and how much to eat",
+    video: null,
     points: [
-      ["PROTEIN IS THE BUILDING MATERIAL", "Amino acids are what every machine in the factory is built and repaired from. Every plate starts with meat, fish or eggs."],
+      ["PROTEIN IS THE BUILDING MATERIAL", "Every machine in the factory is built and repaired from what protein brings in. Every plate starts with meat, fish or eggs."],
       ["FAT IS THE FUEL", "The fat that comes with the meat is what the factory runs on now. Do not trim it off and do not fear butter."],
       ["CARBS ARE THE FUEL YOU STOP SENDING", "Not banned for life. They are instant fuel for athletes on the clock, not for a dad running a steady day. They come back in Phase 4, on purpose, once the factory knows how to switch."],
-      ["FULL, THEN STOP", "No weighing, no counting grams in an app. Eat until you are full and stop there. The factory tells you when the dock is stocked."],
+      ["FULL, THEN STOP", "No weighing, no counting grams in an app. Eat until you are full and stop there."],
+      ["DO NOT STARVE THE FACTORY", "This is a fuel change, not a calorie cut. Going very low on food scrambles the meter and makes the switch harder, not faster."],
       ["THE FAMILY TABLE", "Same meat as everyone else at the table. You do not need your own kitchen. Leave the bread and the potatoes for them and double up on what is on the board."],
+    ],
+  },
+  {
+    slug: "gut-health",
+    title: "Gut health",
+    sub: "The loading dock while the load changes",
+    video: null,
+    points: [
+      ["THE DOCK GETS A NEW LOAD", "Change what comes in and the crew on the loading dock has to change with it. A few weeks of the gut being slow, loose or unsettled is the dock adjusting, not a fault."],
+      ["AMINO ACIDS ARE STRUCTURE", "The dock breaks protein down into amino acids: the parts list every machine in the factory is built from."],
+      ["CHOLESTEROL BUILDS WALLS AND BILE", "Cholesterol goes into the walls of every cell, and into bile, which the dock uses to break fat down. More fat coming in means more bile called for."],
+      ["EASE THE FAT IN", "If the dock is struggling, bring the fat up over a week or two rather than overnight. Fat from the meat first, then butter."],
       ["SEED OILS STAY OUT", "Cook in butter, tallow or the fat off the meat. The seed oil bottle went in the bin in Phase 1. It stays there."],
+      ["IF IT DOES NOT SETTLE", "Blood, real pain, or a gut that has not settled after a couple of weeks is a job for your GP, not for us. Go."],
     ],
   },
   {
-    slug: "zone-training",
-    title: "Zone training",
-    sub: "Zone two, and why easy is the point",
+    slug: "cells",
+    title: "Cells",
+    sub: "The power plants, and teaching them the new fuel",
+    video: null,
     points: [
-      ["THE GAUGE IS YOUR WATCH", "Zone two is the steady cruise: a pace where you can still talk in full sentences. If you can only get a few words out, ease off."],
-      ["WHY EASY, WHY NOW", "Hard sprints call for instant fuel, the kind the dock is no longer sending. Easy, steady work is done on fat. That is the fuel the factory is learning to use."],
-      ["MORE POWER PLANTS", "Time in zone two is when the cells grow more of their own power plants. That is what fat adaptation is built from."],
-      ["HOW MUCH", "Three or four sessions a week is plenty to start. A brisk walk counts. An easy bike counts. Showing up counts most."],
+      ["EVERY CELL HAS POWER PLANTS", "Inside each cell are small power plants that turn fuel into the energy the machines run on. They can burn sugar or fat."],
+      ["TWO FUELS", "Sugar burns fast and runs out fast. Fat, and the ketones the liver makes from it, burn steady. A busy dad needs steady."],
+      ["RELEARNING THE FUEL", "After years of sugar the power plants have forgotten how to run on fat. The switch is them relearning. That is why the first week feels flat."],
+      ["ZONE TWO GROWS MORE PLANTS", "Easy, steady work at a pace where you can still talk. Three or four sessions a week is plenty to start, and a brisk walk counts. That is when the cells build more power plants."],
       ["WEIGHTS STILL WAIT", "Structured lifting comes in Phase 4, on an engine that already runs on fat. Do not turn the switch into a bodybuilding block."],
-      ["PROOF, NOT A SCORE", "The watch is the record that the work got done. It is not a leaderboard."],
+      ["THE METER READS THE FUEL", "A ketone reading tells you the cells are being fed from fat right now. That is the switch, on a screen."],
     ],
   },
-  {
-    slug: "alcohol",
-    title: "Alcohol",
-    sub: "Why a Friday night prints on Monday's meter",
-    points: [
-      ["THE LIVER DROPS EVERYTHING", "To the processing station, alcohol is a hazard that has to be cleared first. Everything else waits, and that includes turning fat into ketones."],
-      ["FRIDAY PRINTS ON MONDAY", "A big night stalls the switch for days, not hours. You will see it on the meter. That is the meter doing its job."],
-      ["BEER IS LIQUID BREAD", "It brings the alcohol and the sugar through the dock at the same time. Two stalls for the price of one."],
-      ["A STALL, NOT A SIN", "This is not a lecture and it is not a life ban. While you are switching it holds you up, and that is the only reason it sits in Phase 2."],
-      ["LOG IT HONESTLY", "If you had a drink, test anyway and log the number. A low reading with a reason is useful. A missing reading is not."],
-      ["IF STOPPING IS HARD", "If going without is harder than you expected, that is a conversation for your GP, not a test of willpower. Plenty of men have it."],
-    ],
-  },
+];
+
+/* Lesson pages that are not on the list: opened from a card instead. */
+const PHASE2_EXTRA = [
   {
     slug: "visceral-fat",
     title: "Visceral fat",
-    sub: "The warehouse around the organs",
+    video: null,
     points: () => [
       ["TWO KINDS OF STORE", "The fat you can pinch sits under the skin. Visceral fat is packed in around the organs: the hard belly that pushes the belt out. They are not the same store."],
       ["THE FIRST WAREHOUSE", "Visceral fat sits closest to the pipes, so it is the first warehouse that opens when the dock goes quiet. It is what Phase 2 goes after."],
       ["YOUR NUMBER", state.scan.visceral ? `Your scan put your visceral fat at ${escapeHtml(state.scan.visceral)}. That is your starting line. It is a number from a machine, not a grade.` : "Your scan does not have a visceral number saved. Some machines do not print one. Add it if yours does."],
       ["THE BELT, NOT THE SCALES", "The scales cannot tell the two stores apart. Your waist can. If the belt moves and the scales do not, the factory is doing its job."],
-      ["WHY IT MATTERS", "This is the fat that crowds the liver and the organs and gets in the way of the factory's work. Opening that warehouse is the whole point of the switch."],
       ["NOT A BEAUTY CONTEST", "An optional second scan comes later, as data. Not a before-and-after photo."],
     ],
   },
@@ -1236,6 +1268,13 @@ function bind() {
   });
   document.querySelectorAll("[data-watch]").forEach((btn) => {
     btn.onclick = () => save({ watched: { ...state.watched, [btn.getAttribute("data-watch")]: true } });
+  });
+  document.querySelectorAll("[data-done2]").forEach((btn) => {
+    btn.onclick = () => {
+      const next = btn.getAttribute("data-next");
+      save({ done2: { ...(state.done2 || {}), [btn.getAttribute("data-done2")]: true } });
+      location.hash = next ? "#/app/lesson/2/" + next : "#/app/my-body/2";
+    };
   });
   document.querySelectorAll("[data-own]").forEach((btn) => {
     btn.onclick = () => {
