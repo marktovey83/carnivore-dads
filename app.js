@@ -248,7 +248,7 @@ function noteFor(title, n, locked) {
   if (title === "My body") {
     if (Number(state.phase) === 1) {
       const left = gate2().items.filter((i) => !i.ok).length;
-      return left ? `${left} of 3 left before Phase 2` : "Phase 2 is ready to unlock";
+      return left ? `${left} of ${KIT.length} left before Phase 2` : "Phase 2 is ready to unlock";
     }
     return state.owned.scan ? "Scan saved" : "No scan saved yet";
   }
@@ -260,15 +260,15 @@ function myBody(phase) {
   const rows = KIT.map((item) => {
     const watched = !!state.watched[item.id];
     const have = !!state.owned[item.id];
-    const hint = watched
-      ? "Tick it when it is in your hands."
-      : item.video
-        ? "Watch it first. It tells you which one to buy."
+    const hint = have
+      ? "Got it."
+      : item.video && !watched
+        ? "Tick it when it is in your hands. The video tells you which one to buy."
         : item.href
-          ? "Open it when you have your numbers."
-          : "The lesson for this one is being made.";
+          ? "Tick it when your scan is done."
+          : "Tick it when it is in your hands.";
     return `
-      <div class="kit-row ${watched ? "" : "locked"}">
+      <div class="kit-row">
         <button class="check ${have ? "on" : ""}" data-own="${item.id}">${have ? "\u2713" : ""}</button>
         <div>${item.name}<div class="fine">${hint}</div></div>
         ${plate(item)}
@@ -688,18 +688,10 @@ function startOfDay(t) {
   return d.getTime();
 }
 
-/* Phase 1 -> 2. Bloods are optional, so they are asked for, not required. */
+/* Phase 1 -> 2. */
 function gate2() {
-  const items = [
-    { ok: !!state.occupation, label: "Your trade", note: state.occupation || "Set it in Start your reset", href: "#/reset" },
-    { ok: !!state.owned.scan, label: "Your body scan", note: state.owned.scan ? "Saved" : "Not saved yet", href: "#/app/scan" },
-    {
-      ok: readingsFor(1).length >= GATE2.baseline,
-      label: "Ketone baseline",
-      note: `${Math.min(readingsFor(1).length, GATE2.baseline)} of ${GATE2.baseline} readings`,
-      href: "#/app/ketones/1",
-    },
-  ];
+  // Phase 2 opens when every box in What you need is ticked.
+  const items = KIT.map((k) => ({ ok: !!state.owned[k.id], label: k.name, note: state.owned[k.id] ? "Ticked" : "Not ticked yet" }));
   return { items, met: items.every((i) => i.ok) };
 }
 
@@ -764,10 +756,9 @@ function gate2Card() {
     <div class="card gate-card">
       <p class="field" style="margin-top:0">What opens Phase 2</p>
       ${gateList(g.items)}
-      <p class="fine">Your bloods are not on this list. We still want them, but you do not have to wait on a doctor to switch.</p>
       ${g.met
         ? `<button class="btn" data-act="unlock-2" style="margin-top:8px">UNLOCK PHASE 2: THE SWITCH</button>`
-        : `<p class="fine" style="margin-bottom:0">When all three are ticked, the button to open Phase 2 appears here.</p>`}
+        : `<p class="fine" style="margin-bottom:0">Tick every box in What you need and Phase 2 opens.</p>`}
     </div>`;
 }
 
@@ -1279,14 +1270,16 @@ function bind() {
   document.querySelectorAll("[data-own]").forEach((btn) => {
     btn.onclick = () => {
       const id = btn.getAttribute("data-own");
-      // A box he has not unlocked yet used to swallow the tap, so it looked
-      // broken. Take him to the lesson (or the scan form) that unlocks it.
-      if (!state.watched[id]) {
-        const item = kitItem(id);
-        if (item) location.hash = item.href || `#/app/kit/${item.slug}`;
+      // Any box ticks straight away. The last one ticked opens Phase 2.
+      const owned = { ...state.owned, [id]: !state.owned[id] };
+      const all = KIT.every((k) => owned[k.id]);
+      if (all && (Number(state.phase) || 1) < 2) {
+        const now = Date.now();
+        save({ owned, phase: 2, phase2At: now, nextPingAt: nextPingTime(now) });
+        location.hash = "#/app/my-body/2";
         return;
       }
-      save({ owned: { ...state.owned, [id]: !state.owned[id] } });
+      save({ owned });
     };
   });
   // querySelector, singular, meant only the first action button on a screen
