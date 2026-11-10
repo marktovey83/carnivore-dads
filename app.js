@@ -1279,7 +1279,13 @@ function bind() {
   document.querySelectorAll("[data-own]").forEach((btn) => {
     btn.onclick = () => {
       const id = btn.getAttribute("data-own");
-      if (!state.watched[id]) return;
+      // A box he has not unlocked yet used to swallow the tap, so it looked
+      // broken. Take him to the lesson (or the scan form) that unlocks it.
+      if (!state.watched[id]) {
+        const item = kitItem(id);
+        if (item) location.hash = item.href || `#/app/kit/${item.slug}`;
+        return;
+      }
       save({ owned: { ...state.owned, [id]: !state.owned[id] } });
     };
   });
