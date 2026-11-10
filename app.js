@@ -664,9 +664,46 @@ function account() {
       Show me gyms and butchers near me. Off by default.
     </label>
     <button class="btn" style="margin-top:18px" data-act="save-account">SAVE DETAILS</button>
+    ${installCard()}
     <a class="btn ghost" href="#/" style="margin-top:10px;display:block">BACK TO LOG IN</a>
     ${legal()}
   `, "account");
+}
+
+/* --- The app ------------------------------------------------------------
+   The website and the app are the same thing: installing puts the site on
+   his home screen with its own icon, full screen, no browser bar. */
+
+let installPrompt = null; // Android hands this over when the site can be installed
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  if (location.hash === "#/app/account") render();
+});
+window.addEventListener("appinstalled", () => {
+  installPrompt = null;
+  if (location.hash === "#/app/account") render();
+});
+
+function isInstalled() {
+  return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+}
+
+function installCard() {
+  const iphone = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const body = isInstalled()
+    ? `<p class="lede" style="margin:0">You are in the app. Everything you do here is the same as on the website.</p>`
+    : installPrompt
+      ? `<p class="lede" style="margin:0">Put Carnivore Dads on your home screen. It opens full screen with its own icon, like any other app.</p>
+         <button class="btn" data-act="install" style="margin-top:12px">INSTALL THE APP</button>`
+      : iphone
+        ? `<p class="lede" style="margin:0">Open this page in Safari, tap the Share button, then <b>Add to Home Screen</b>.</p>`
+        : `<p class="lede" style="margin:0">In Chrome, tap the <b>&#8942;</b> menu, then <b>Install app</b> or <b>Add to Home screen</b>.</p>`;
+  return `
+    <div class="card" style="margin-top:22px">
+      <p class="field" style="margin-top:0">Get the app</p>
+      ${body}
+    </div>`;
 }
 
 /* ---------------------------------------------------------------------------
@@ -1162,6 +1199,13 @@ function bind() {
       const when = val("mmol-when");
       save({ ketones: [...state.ketones, { mmol: String(mmol), at: Date.now(), phase: Number(state.phase) || 1, ...(when && when !== "Any time" ? { when } : {}) }] });
     }
+    if (kind === "install" && installPrompt) {
+      installPrompt.prompt();
+      installPrompt.userChoice.finally(() => {
+        installPrompt = null;
+        render();
+      });
+    }
     if (kind === "unlock-2") {
       if (!gate2().met) return;
       const now = Date.now();
@@ -1197,3 +1241,8 @@ document.addEventListener("focusout", () => {
   }, 0);
 });
 render();
+
+// Makes the site installable and lets it open without a signal. See sw.js.
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+}

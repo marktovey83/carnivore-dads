@@ -137,3 +137,13 @@ React source is in `src/` for a later Vite build. The live app is the root stati
 ## Product docs
 
 See `docs/master-map.md`, `docs/app-build-status.md`, `docs/feature-backlog.md`.
+
+## The app
+
+The website and the app are one build. `manifest.webmanifest` and `sw.js`
+make the site installable: on Android, Chrome offers Install app (and
+Account has an INSTALL THE APP button when Chrome allows it); on iPhone,
+Safari → Share → Add to Home Screen. It opens full screen with the CD plate
+icon (`assets/icons/`). The service worker fetches pages, scripts and styles
+from the network first and only falls back to its saved copy when offline,
+so an update never gets stuck behind an old version. Films are not cached.

@@ -25,7 +25,7 @@ jobs:
       - name: Stage site
         run: |
           mkdir -p _site
-          cp index.html styles.css app.js _site/
+          cp index.html styles.css app.js manifest.webmanifest sw.js _site/
           cp -r docs _site/docs
           cp -r assets _site/assets
           # Stamp the cache-busting query with this commit, so a push always
