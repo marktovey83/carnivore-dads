@@ -244,7 +244,7 @@ function noteFor(title, n, locked) {
     if (title === "My body") return g.met ? "Phase 3 gate met" : `${g.good} of the last 7 mornings at ${GATE3.threshold}+`;
     return `${PHASE2_LESSONS.filter((l) => (state.done2 || {})[l.slug]).length} of ${PHASE2_LESSONS.length} lessons done`;
   }
-  if (title === "Ketones") return `${readingsFor(1).length} baseline readings saved`;
+  if (title === "Ketones") return `${readingsFor(1).length} readings saved`;
   if (title === "My body") {
     if (Number(state.phase) === 1) {
       const left = gate2().items.filter((i) => !i.ok).length;
@@ -281,7 +281,7 @@ function myBody(phase) {
       <video class="lesson-video" controls preload="metadata" playsinline
              src="./assets/phase1-intro.mp4"></video>
       <p class="fine">1:02</p>
-      <p class="lede" style="margin:10px 0 0">Eleven systems, one loading dock, pipes that carry what the machines need, a warehouse of stored fat around the organs, and a processing station in the liver. Phase 1 is the baseline: the bloods so nobody is guessing, the scan so you can see the engine, your first morning readings, and the simple kit below.</p>
+      <p class="lede" style="margin:10px 0 0">Eleven systems, one loading dock, pipes that carry what the machines need, a warehouse of stored fat around the organs, and a processing station in the liver. Phase 1 is the baseline: the bloods so nobody is guessing, the scan so you can see the engine, your first meter readings, and the simple kit below.</p>
     </div>
     <div class="split"><span class="field" style="margin:0">What you need</span><span class="badge">${owned} / ${KIT.length}</span></div>
     ${rows}
@@ -292,9 +292,9 @@ function myBody(phase) {
       <button class="btn ghost">UPLOAD YOUR BLOOD TEST</button>
     </div>
     <div class="card">
-      <p class="field" style="margin-top:0">Ketone baseline</p>
-      <p class="lede" style="margin:0">Your starting readings stay with your Ketones record. Five tests, every second day.</p>
-      <a class="btn ghost" href="#/app/ketones/1" style="margin-top:12px;display:block">OPEN BASELINE READINGS</a>
+      <p class="field" style="margin-top:0">Your ketone readings</p>
+      <p class="lede" style="margin:0">Test whenever you like, as often as you like. After a big feed, after something sweet, first thing, last thing. Every reading goes on your record.</p>
+      <a class="btn ghost" href="#/app/ketones/1" style="margin-top:12px;display:block">OPEN YOUR READINGS</a>
     </div>
     ${gate2Card()}`;
   const later = `
@@ -344,10 +344,10 @@ function factory() {
     <div class="card">
       <strong>BLOOD KETONES</strong>
       ${Number(state.phase) >= 2
-        ? `<p class="fine">Test first thing every morning. Most mornings at 0.5 or above across a week, plus three clean random pings, is what opens Phase 3.</p>
-      <a class="btn" href="#/app/ketones/2">LOG THIS MORNING</a>`
-        : `<p class="fine">Eat the way you eat now. Test first thing, five times, one every second day, and photograph each one. That is your before-photo, and it is what opens Phase 2.</p>
-      <a class="btn" href="#/app/ketones/1">LOG MY FIRST READING</a>`}
+        ? `<p class="fine">Keep testing whenever you like. The more readings you log, the clearer the picture of the factory switching fuel.</p>
+      <a class="btn" href="#/app/ketones/2">LOG A READING</a>`
+        : `<p class="fine">Eat the way you eat now and test whenever you like, as often as you like. Try one after a sugary meal, one after a big feed, one first thing. Watch what the number does. That is your before-photo.</p>
+      <a class="btn" href="#/app/ketones/1">LOG A READING</a>`}
     </div>
   `,
     "home"
@@ -538,7 +538,7 @@ function ketoneMeter() {
       <li><strong>THE TREND, NOT THE READING</strong>One lucky high number is not the story. Watch the pattern over days. The factory is learning to run on its own stores.</li>
     </ul>
     <button class="btn" data-watch="ketones">WATCHED IT &mdash; UNLOCK THE BOX</button>
-    <a class="btn ghost" href="#/app/ketones/1" style="margin-top:8px;display:block">OPEN YOUR BASELINE READINGS</a>
+    <a class="btn ghost" href="#/app/ketones/1" style="margin-top:8px;display:block">OPEN YOUR READINGS</a>
     <a class="btn ghost" href="#/app/shop" style="margin-top:8px;display:block">GET IT IN THE SHOP</a>
     ${legal()}
   `,
@@ -592,23 +592,28 @@ function videos(phase) {
   `);
 }
 
+/* When a Phase 1 reading was taken. He picks one; it is a note, not a rule. */
+const WHEN = ["Any time", "First thing", "After a sugary meal", "After a big feed", "Before bed"];
+
 function ketones(phase) {
   if (phase === 2) return phaseShell("Ketones", "ketones", phase, phase2Ketones());
   const rows = readingsFor(1).map((k, i) => `
       <div class="kit-row">
         <div class="check on">${i + 1}</div>
-        <div>${escapeHtml(k.mmol)} mmol/L<div class="fine">${new Date(k.at).toLocaleString()}</div></div>
+        <div>${escapeHtml(k.mmol)} mmol/L${k.when ? ` · ${escapeHtml(k.when)}` : ""}<div class="fine">${new Date(k.at).toLocaleString()}</div></div>
         <span></span>
       </div>`).join("");
   return phaseShell("Ketones", "ketones", phase, `
     <p class="lede">${phase === 1
-      ? "Your starting picture. Five tests, one every second day, on the diet you eat now. A typical old-diet reading is 0.0 to 0.2 mmol/L, and a low number is the honest starting point, not a failure."
+      ? "Your starting picture. Test whenever you like, as often as you like, on the diet you eat now. After a sugary meal. After a big feed. First thing, last thing, whenever you are curious. On the old diet the number usually sits low, around 0.0 to 0.2 mmol/L. That is not a failure. It is the honest before-photo, and the more readings you log, the sharper it gets."
       : "Your meter readings, kept in one place."}</p>
-    <label class="field">Morning reading (mmol/L)</label>
-    <input id="mmol" inputmode="decimal" placeholder="0.1" />
+    <label class="field">Your reading (mmol/L)</label>
+    <input id="mmol" inputmode="decimal" placeholder="e.g. 0.1" />
+    <label class="field">When did you test?</label>
+    <select id="mmol-when">${WHEN.map((w) => `<option>${w}</option>`).join("")}</select>
     <button class="btn" style="margin-top:12px" data-act="log-ketone">SAVE READING</button>
     <p class="fine" id="mmol-msg" role="status"></p>
-    <p class="badge" style="margin-top:16px">${readingsFor(1).length}${phase === 1 ? " / 5" : ""}</p>
+    <p class="badge" style="margin-top:16px">${readingsFor(1).length} LOGGED</p>
     ${rows}
     <p class="fine">A reading is a fact about right now, not a score. The dial is a scale, not a target.</p>
     <a class="btn ghost" href="#/app/kit/ketone-meter" style="margin-top:12px;display:block">WATCH: YOUR KETONE METER</a>
@@ -669,7 +674,6 @@ function account() {
 
 const DAY = 24 * 60 * 60 * 1000;
 const PING_WINDOW_MIN = 30; // minutes from the ping showing to the photo deadline
-const GATE2 = { baseline: 5 };
 const GATE3 = { days: 7, mornings: 5, threshold: 0.5, pings: 3 };
 
 /* Readings saved before phases were tracked belong to Phase 1. */
@@ -1247,7 +1251,7 @@ function bind() {
       if (!note) return;
       note.textContent =
         n === 2
-          ? "Phase 2 opens when your trade, your scan and five baseline readings are in. Open Phase 1 to see what is left."
+          ? "Phase 2 opens when every box in What you need is ticked. Open Phase 1 to see what is left."
           : n === 3
             ? "Phase 3 opens when the Phase 2 gate is met: most mornings at 0.5 or above across a week, and three clean pings."
             : `${n === 5 ? "Graduate" : "Phase " + n} opens after the phase before it.`;
@@ -1324,7 +1328,8 @@ function bind() {
         return;
       }
       // Readings land in the phase he is in, so the baseline stays the baseline.
-      save({ ketones: [...state.ketones, { mmol: String(mmol), at: Date.now(), phase: Number(state.phase) || 1 }] });
+      const when = val("mmol-when");
+      save({ ketones: [...state.ketones, { mmol: String(mmol), at: Date.now(), phase: Number(state.phase) || 1, ...(when && when !== "Any time" ? { when } : {}) }] });
     }
     if (kind === "unlock-2") {
       if (!gate2().met) return;
