@@ -51,14 +51,6 @@ a:hover { color: var(--ember-hot); }
   display: flex;
   flex-direction: column;
 }
-@media (min-width: 520px) {
-  .phone {
-    min-height: 844px;
-    margin: 12px 0 40px;
-    border: 1px solid #2a2a2a;
-    box-shadow: 0 30px 80px rgba(0,0,0,.45);
-  }
-}
 
 .screen {
   flex: 1;
@@ -444,21 +436,49 @@ body.typing .tabs { display: none; }
   margin: 4px 0 6px;
 }
 
-/* Inside the simulated phone on a desktop, the ribbon belongs to the frame
-   rather than the window. This has to come AFTER the base .tabs rule: a media
-   query carries no extra specificity, and when it sat above, only its width
-   and transform survived and threw the bar off the side of the screen.
-   right:auto matters too, or left + right + width is over-constrained. */
-@media (min-width: 520px) {
+/* The website on a computer. Phones keep the app layout: one column with the
+   ribbon along the bottom. From tablet width up it is a proper site: full
+   width, the ribbon becomes a menu across the top, and the content sits in a
+   readable column. This has to come AFTER the base .tabs rule, because a
+   media query carries no extra specificity. */
+@media (min-width: 760px) {
+  .phone { width: 100%; min-height: 0; background: transparent; }
+  .screen { width: min(880px, 100%); margin: 0 auto; padding: 28px 32px 64px; overflow: visible; }
+  .screen.with-tabs { padding-bottom: 64px; }
+  .desk-bar { width: min(1120px, 100%); }
+
   .tabs {
-    position: absolute;
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    width: min(390px, 100%);
-    height: 86px;
-    padding-bottom: 0;
+    order: -1;
+    position: sticky;
+    top: 0;
+    left: auto; right: auto; bottom: auto;
+    height: auto;
+    padding: 0 max(20px, calc((100% - 1120px) / 2));
+    border-top: 0;
+    border-bottom: 1px solid #2b2b2b;
+    background: rgba(18, 18, 18, 0.96);
+    backdrop-filter: blur(6px);
+    display: flex;
+    justify-content: center;
+    gap: 8px;
   }
+  .tabs a, .tabs button {
+    flex-direction: row; align-items: center; gap: 8px;
+    padding: 16px 18px; min-height: 0;
+    font-size: 15px; letter-spacing: 0.06em;
+    border-bottom: 2px solid transparent;
+  }
+  .tabs a.on, .tabs button.on { border-bottom-color: var(--ember); }
+  .tabs a svg { width: 20px; height: 20px; }
+  .tabs a.tab-hub { padding-top: 16px; font-weight: 400; }
+  .tabs a.tab-hub svg {
+    width: 20px; height: 20px; padding: 0; margin: 0;
+    border: 0; border-radius: 0; background: none; color: currentColor; box-shadow: none;
+  }
+  .tabs a.tab-hub span { margin-top: 0; }
+  .tabs a.tab-hub:not(.on) { color: #8a8374; }
+  body.typing .tabs { display: flex; }
+  .lesson-video { max-height: 460px; background: #000; }
 }
 
 /* A lesson whose video is not cut yet. Says so, rather than showing a play
