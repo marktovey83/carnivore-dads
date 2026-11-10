@@ -82,9 +82,9 @@ Hash routes:
 
 ## Phase 2: The Switch
 
-Formerly "The Dad Bod". Phase 1 has a gate card at the foot of the kit:
-his trade, a saved scan and five baseline readings. Bloods are asked for,
-not required. When all three are in, UNLOCK PHASE 2 opens it.
+Formerly "The Dad Bod". The program is about knowledge, and the phases are
+locked only so nobody gets ahead. Phase 1 opens Phase 2 when every box in
+What you need is ticked; each box ticks with one tap.
 
 `#/app/my-body/2` is The Switch, laid out like Phase 1: the intro film at
 the top (`PHASE2_INTRO_VIDEO`, a placeholder until it is filmed), then four
@@ -92,23 +92,19 @@ lessons he ticks off the way he ticks off the kit: Sugar, Macros, Gut health,
 Cells (`#/app/lesson/2/<slug>`). Each lesson's `video` field takes its file
 in `assets/` once filmed, and the plate turns from READ to WATCH. Below the
 lessons: a GP warning for anyone on blood sugar or blood pressure medicine,
-the first-week salt and magnesium reminder, his last seven mornings, his
+the first-week salt and magnesium reminder, a link to his readings, his
 visceral number from the scan, and the Phase 3 gate.
 
 Alcohol is folded into Sugar and zone training into Cells. The visceral fat
 page is opened from the warehouse card rather than the list.
 
-`#/app/ketones/2` logs mornings and handles random pings. Readings are
-tagged with the phase they were taken in, so the baseline stays the baseline.
-A ping falls due at a random time 12 to 42 hours after the last, in waking
-hours, and is never announced. There is no push service, so it shows the next
-time the app is open, and he then has 30 minutes to send the number and a
-photo of the meter. Clean means in time and at 0.5 or above. The photo is
-shrunk to a thumbnail and kept on the phone.
+Ketones, in both phases: he tests whenever he likes, as often as he likes,
+and can tag a reading with when he took it (first thing, after a sugary meal,
+after a big feed, before bed). There is no target number and no morning rule.
+Readings are tagged with the phase they were taken in.
 
-Phase 2 → 3 gate: at least 7 days in Phase 2, 5 of the last 7 mornings at
-0.5 or above (a ping is not a morning), and 3 clean pings. When it is met the
-app says so; Phase 3 itself is not built yet, so it does not open.
+Phase 2 → 3 gate: all four Phase 2 lessons ticked off. When it is met the app
+says so; Phase 3 itself is not built yet, so it does not open.
 
 Lesson films for Phase 2 are not made yet. Each lesson page says so and
 carries the full script as text, so the films can be made from it.

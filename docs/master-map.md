@@ -73,7 +73,7 @@ Not optional extras. Not "only if you are already sick."
 7. Magnesium glycinate
 8. Gym membership — habit + engine rebuild, **not** a 3×12 program
 
-Ketone rule in Phase 1: **three morning tests on the current diet** before the Phase 2 crash. Typical old-diet baseline is about **0.0–0.2 mmol/L**. That is the before-photo.
+Ketone rule in Phase 1: **test whenever you like, as often as you like** on the current diet (after a sugary meal, after a big feed, first thing). Typical old-diet reading is about **0.0–0.2 mmol/L**. That is the before-photo.
 
 Gym stance: weights are not banned. Structured lifting comes later. The scan usually already shows a big engine. It needs to run on fat.
 
@@ -90,18 +90,17 @@ The "typical time" column is a **guide for the man, not a rule for the app**. Th
 
 | Phase | Title | Job of the phase | Typical time (guide only) | Scoreboard / gate |
 |---|---|---|---|---|
-| 1 | Knowing Your Body / Factory Reset | Login, kit, bloods, scan, watch, 3-morning ketone baseline, gut + macros videos | About a fortnight | Full profile + bloods + ketone baseline. Hard gate. |
-| 2 | The Switch | Intro film, then four lessons: Sugar, Macros, Gut health, Cells. Zone training starts (in Cells). Alcohol sits here (in Sugar). Visceral fat made visible from the scan. | About a fortnight | Scheduled morning ketones + random in-app pings with photo deadline. |
+| 1 | Knowing Your Body / Factory Reset | Login, kit, bloods, scan, watch, ketone readings any time, gut + macros videos | About a fortnight | Every kit box ticked. |
+| 2 | The Switch | Intro film, then four lessons: Sugar, Macros, Gut health, Cells. Zone training starts (in Cells). Alcohol sits here (in Sugar). Visceral fat made visible from the scan. | About a fortnight | All four lessons ticked off. Ketones any time, no target. |
 | 3 | The Liver | Processing station. Intro fasting (structured, not heroic). Zones continue. | About a fortnight | Fasting locked behind Phase 2 ketone gate. Medical lane also needs GP-signed labs + written med plan. |
 | 4 | Advanced Macros | Timing, amounts, when carbs return and how the system switches back. Scan as a work list. Structured workouts start. | About a fortnight | Ketones still prove default fuel. Watch proves the work. Optional second scan is data, not a beauty contest. |
 | 5 | Graduation / The Room | Join the community. Not a victory photo. Factory stays open. | Ongoing | You leave with a portal, not a certificate. |
 
 **Phase 2 → Phase 3 unlock (locked):**
 
-- Enough time in Phase 2 for the data to mean something
-- Most mornings **≥ 0.5 mmol/L across 7 days**
-- At least **three clean random pings**
-- One lucky reading is **not** the key
+- All four Phase 2 lessons ticked off (Sugar, Macros, Gut health, Cells)
+- It is about knowledge: the lock is only there so nobody gets ahead
+- Ketones are logged any time, with no target number
 
 Scales stay in the cupboard. Daily/weekly weigh-ins are the wrong scoreboard. Neither is the calendar — a slow dad is not a failing dad.
 

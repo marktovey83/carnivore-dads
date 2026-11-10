@@ -500,28 +500,6 @@ a.gate-row:hover { color: var(--ember); }
 .gate-row .check { cursor: default; }
 .warn-card { border-left: 3px solid var(--warn); }
 .big-num { font-family: Anton, sans-serif; font-size: 34px; color: var(--ember); line-height: 1; }
-.week-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
-.week-strip .day {
-  background: var(--plate); padding: 8px 2px; text-align: center;
-  display: flex; flex-direction: column; gap: 4px; border: 1px solid transparent;
-}
-.week-strip .day small { font-size: 10px; letter-spacing: 0.14em; color: var(--muted); }
-.week-strip .day b { font-family: Anton, sans-serif; font-weight: 400; font-size: 16px; }
-.week-strip .day.hit { background: var(--ember); color: #1a1408; }
-.week-strip .day.hit small { color: #1a1408; }
-.week-strip .day.none { border: 1px dashed #4a463d; background: transparent; color: var(--muted); }
-.week-strip .day.before { opacity: 0.3; background: transparent; }
-.ping-banner {
-  display: flex; flex-direction: column; gap: 2px;
-  background: var(--ember); color: #1a1408; padding: 12px 14px; margin: 0 0 16px;
-}
-.ping-banner:hover { color: #1a1408; background: var(--ember-hot); }
-.ping-banner b { font-family: Anton, sans-serif; font-weight: 400; letter-spacing: 0.08em; font-size: 18px; }
-.ping-banner span { font-size: 13px; }
-.ping-card { border: 1px solid var(--ember); }
-.ping-card input[type="file"] { padding: 10px; }
-.ping-thumb { width: 42px; height: 42px; object-fit: cover; display: block; }
-.ping-thumb.empty { background: #1b1b1b; border: 1px dashed #4a463d; }
 .badge.dim { border-color: #4a463d; color: var(--muted); }
 a.lesson-row { color: var(--bone); }
 a.lesson-row:hover { color: var(--ember); }

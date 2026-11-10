@@ -55,9 +55,9 @@ const SHOP = [
   ["Inspection-plate cap", 35],
 ];
 const CLIENTS = [
-  { id: "daniel", name: "Daniel R.", suburb: "Mandurah, WA", trade: "FIFO electrician", country: "Australia", phase: 2, day: 11, status: "miss", lastLog: "6 days ago", ketones: "2 of 7", pings: "1 of 3", notes: "On a two-weeks-on swing. Expect gaps in logging while he's on site — check in when he's back." },
-  { id: "james", name: "James P.", suburb: "Fremantle, WA", trade: "Builder", country: "Australia", phase: 1, day: 8, status: "ok", lastLog: "yesterday", ketones: "4 of 5", pings: "—", notes: "" },
-  { id: "tom", name: "Tom H.", suburb: "Osborne Park, WA", trade: "Truck / long haul", country: "Australia", phase: 2, day: 16, status: "gate", lastLog: "today", ketones: "6 of 7", pings: "3 of 3", notes: "Gate almost met. Morning readings holding." },
+  { id: "daniel", name: "Daniel R.", suburb: "Mandurah, WA", trade: "FIFO electrician", country: "Australia", phase: 2, day: 11, status: "miss", lastLog: "6 days ago", ketones: "9 logged", lessons2: "1 of 4", notes: "On a two-weeks-on swing. Expect gaps in logging while he's on site — check in when he's back." },
+  { id: "james", name: "James P.", suburb: "Fremantle, WA", trade: "Builder", country: "Australia", phase: 1, day: 8, status: "ok", lastLog: "yesterday", ketones: "4 logged", notes: "" },
+  { id: "tom", name: "Tom H.", suburb: "Osborne Park, WA", trade: "Truck / long haul", country: "Australia", phase: 2, day: 16, status: "gate", lastLog: "today", ketones: "14 logged", lessons2: "3 of 4", notes: "One lesson to go before Phase 3." },
 ];
 
 const defaults = {
@@ -72,12 +72,8 @@ const defaults = {
   scan: { height: "180", weight: "95", bodyFat: "28", visceral: "12" },
   ketones: [],
   phase: 1,
-  // Phase 2. phase2At is when he opened it. pings are the random in-app checks;
-  // nextPingAt is when the next one is due, and is never shown to him.
-  phase2At: null,
+  phase2At: null, // when he opened Phase 2
   done2: {}, // Phase 2 lessons he has ticked off
-  pings: [],
-  nextPingAt: null,
 };
 
 function load() {
@@ -146,7 +142,6 @@ function phone(inner, tab) {
       <div class="phone">
         <div class="screen ${tab ? "with-tabs" : ""}">
           <a href="#/app/my-body">${lockup(!!tab)}</a>
-          ${tab ? pingBanner() : ""}
           ${inner}
         </div>
         ${tab ? tabs(tab) : ""}
@@ -240,9 +235,8 @@ function noteFor(title, n, locked) {
   if (locked || n === 5) return "";
   if (n === 2) {
     const g = gate3();
-    if (title === "Ketones") return `${readingsFor(2).length} readings · ${g.clean} of ${GATE3.pings} clean pings`;
-    if (title === "My body") return g.met ? "Phase 3 gate met" : `${g.good} of the last 7 mornings at ${GATE3.threshold}+`;
-    return `${PHASE2_LESSONS.filter((l) => (state.done2 || {})[l.slug]).length} of ${PHASE2_LESSONS.length} lessons done`;
+    if (title === "Ketones") return `${readingsFor(2).length} readings saved`;
+    return g.met ? "All lessons done" : `${g.done} of ${PHASE2_LESSONS.length} lessons done`;
   }
   if (title === "Ketones") return `${readingsFor(1).length} readings saved`;
   if (title === "My body") {
@@ -595,26 +589,38 @@ function videos(phase) {
 /* When a Phase 1 reading was taken. He picks one; it is a note, not a rule. */
 const WHEN = ["Any time", "First thing", "After a sugary meal", "After a big feed", "Before bed"];
 
-function ketones(phase) {
-  if (phase === 2) return phaseShell("Ketones", "ketones", phase, phase2Ketones());
-  const rows = readingsFor(1).map((k, i) => `
-      <div class="kit-row">
-        <div class="check on">${i + 1}</div>
-        <div>${escapeHtml(k.mmol)} mmol/L${k.when ? ` · ${escapeHtml(k.when)}` : ""}<div class="fine">${new Date(k.at).toLocaleString()}</div></div>
-        <span></span>
-      </div>`).join("");
-  return phaseShell("Ketones", "ketones", phase, `
-    <p class="lede">${phase === 1
-      ? "Your starting picture. Test whenever you like, as often as you like, on the diet you eat now. After a sugary meal. After a big feed. First thing, last thing, whenever you are curious. On the old diet the number usually sits low, around 0.0 to 0.2 mmol/L. That is not a failure. It is the honest before-photo, and the more readings you log, the sharper it gets."
-      : "Your meter readings, kept in one place."}</p>
+/* The meter form both phases share. */
+function readingForm() {
+  return `
     <label class="field">Your reading (mmol/L)</label>
     <input id="mmol" inputmode="decimal" placeholder="e.g. 0.1" />
     <label class="field">When did you test?</label>
     <select id="mmol-when">${WHEN.map((w) => `<option>${w}</option>`).join("")}</select>
     <button class="btn" style="margin-top:12px" data-act="log-ketone">SAVE READING</button>
-    <p class="fine" id="mmol-msg" role="status"></p>
-    <p class="badge" style="margin-top:16px">${readingsFor(1).length} LOGGED</p>
-    ${rows}
+    <p class="fine" id="mmol-msg" role="status"></p>`;
+}
+
+/* Every reading in a phase, numbered in the order he took them. */
+function readingRows(phase) {
+  const list = readingsFor(phase);
+  return `
+    <p class="badge" style="margin-top:16px">${list.length} LOGGED</p>
+    ${list.map((k, i) => `
+      <div class="kit-row">
+        <div class="check on">${i + 1}</div>
+        <div>${escapeHtml(k.mmol)} mmol/L${k.when ? ` · ${escapeHtml(k.when)}` : ""}<div class="fine">${new Date(k.at).toLocaleString()}</div></div>
+        <span></span>
+      </div>`).join("")}`;
+}
+
+function ketones(phase) {
+  if (phase === 2) return phaseShell("Ketones", "ketones", phase, phase2Ketones());
+  return phaseShell("Ketones", "ketones", phase, `
+    <p class="lede">${phase === 1
+      ? "Your starting picture. Test whenever you like, as often as you like, on the diet you eat now. After a sugary meal. After a big feed. First thing, last thing, whenever you are curious. On the old diet the number usually sits low, around 0.0 to 0.2 mmol/L. That is not a failure. It is the honest before-photo, and the more readings you log, the sharper it gets."
+      : "Your meter readings, kept in one place."}</p>
+    ${readingForm()}
+    ${readingRows(1)}
     <p class="fine">A reading is a fact about right now, not a score. The dial is a scale, not a target.</p>
     <a class="btn ghost" href="#/app/kit/ketone-meter" style="margin-top:12px;display:block">WATCH: YOUR KETONE METER</a>
   `);
@@ -667,29 +673,15 @@ function account() {
    Phase 2: The switch.
 
    The factory changes fuel. The dock stops taking sugar and flour, and the
-   factory learns to run on what is already in the warehouse. The meter is how
-   he, and we, know it is happening: scheduled morning readings, plus random
-   in-app pings that need a photo of the meter before a deadline.
+   factory learns to run on what is already in the warehouse. It is about
+   knowing why: four lessons, and the meter whenever he is curious. Phase 3
+   stays locked until the four are ticked off, so nobody gets ahead.
 --------------------------------------------------------------------------- */
 
-const DAY = 24 * 60 * 60 * 1000;
-const PING_WINDOW_MIN = 30; // minutes from the ping showing to the photo deadline
-const GATE3 = { days: 7, mornings: 5, threshold: 0.5, pings: 3 };
 
 /* Readings saved before phases were tracked belong to Phase 1. */
 function readingsFor(phase) {
   return (state.ketones || []).filter((k) => (k.phase || 1) === phase);
-}
-
-function dayKey(t) {
-  const d = new Date(t);
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-}
-
-function startOfDay(t) {
-  const d = new Date(t);
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
 }
 
 /* Phase 1 -> 2. */
@@ -699,39 +691,16 @@ function gate2() {
   return { items, met: items.every((i) => i.ok) };
 }
 
-/* The last seven days, oldest first. Each day's first reading is his morning. */
-function week() {
-  const today = startOfDay(Date.now());
-  const start = state.phase2At ? startOfDay(state.phase2At) : today;
-  const first = {};
-  readingsFor(2)
-    .filter((k) => !k.ping) // a ping is a spot check, not his morning
-    .sort((a, b) => a.at - b.at)
-    .forEach((k) => {
-      const key = dayKey(k.at);
-      if (!(key in first)) first[key] = Number(k.mmol);
-    });
-  const days = [];
-  for (let i = 6; i >= 0; i--) {
-    const t = today - i * DAY;
-    const key = dayKey(t);
-    days.push({ t, before: t < start, mmol: key in first ? first[key] : null });
-  }
-  return days;
-}
-
-/* Phase 2 -> 3. One lucky reading is not the key: it is the week, and the pings. */
+/* Phase 2 -> 3. Knowledge, not numbers: every Phase 2 lesson ticked off. */
 function gate3() {
-  const days = state.phase2At ? Math.floor((startOfDay(Date.now()) - startOfDay(state.phase2At)) / DAY) + 1 : 0;
-  const wk = week();
-  const good = wk.filter((d) => d.mmol !== null && d.mmol >= GATE3.threshold).length;
-  const clean = (state.pings || []).filter((p) => p.clean).length;
-  const items = [
-    { ok: days >= GATE3.days, label: "A full week of data", note: `Day ${days} in Phase 2` },
-    { ok: good >= GATE3.mornings, label: `Most mornings at ${GATE3.threshold} or above`, note: `${good} of the last 7 (needs ${GATE3.mornings})` },
-    { ok: clean >= GATE3.pings, label: "Clean random pings", note: `${Math.min(clean, GATE3.pings)} of ${GATE3.pings}` },
-  ];
-  return { days, good, clean, items, met: items.every((i) => i.ok) };
+  const items = PHASE2_LESSONS.map((l) => ({
+    ok: !!(state.done2 || {})[l.slug],
+    label: l.title,
+    note: (state.done2 || {})[l.slug] ? "Done" : "Not done yet",
+    href: `#/app/lesson/2/${l.slug}`,
+  }));
+  const done = items.filter((i) => i.ok).length;
+  return { done, items, met: items.every((i) => i.ok) };
 }
 
 function gateList(items) {
@@ -773,115 +742,9 @@ function gate3Card() {
       <p class="field" style="margin-top:0">What opens Phase 3</p>
       ${gateList(g.items)}
       ${g.met
-        ? `<p class="lede" style="margin:8px 0 0">Gate met. The liver is next, and the Phase 3 lessons are being built. Keep logging: the trend is still your record.</p>`
-        : `<p class="fine" style="margin-bottom:0">The calendar is not the scoreboard and neither are the scales. Some men get there in a week, some take three. A slow dad is not a failing dad.</p>`}
+        ? `<p class="lede" style="margin:8px 0 0">All four done. The liver is next, and the Phase 3 lessons are being built. Keep testing whenever you like: every reading adds to what you know.</p>`
+        : `<p class="fine" style="margin-bottom:0">Tick off all four lessons and Phase 3 opens. Take your time with them. The point is to understand the switch, not to race it.</p>`}
     </div>`;
-}
-
-/* --- Random pings ------------------------------------------------------- */
-
-/* Somewhere between half a day and two days out, in waking hours. He is
-   never told when. */
-function nextPingTime(from) {
-  const t = new Date(from + (12 + Math.random() * 30) * 60 * 60 * 1000);
-  if (t.getHours() < 8 || t.getHours() >= 20) {
-    if (t.getHours() >= 20) t.setDate(t.getDate() + 1);
-    t.setHours(8 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 60), 0, 0);
-  }
-  return t.getTime();
-}
-
-function openPing() {
-  return (state.pings || []).find((p) => !p.done) || null;
-}
-
-/* There is no push service behind this yet, so a ping shows the next time the
-   app is open after it falls due, and the deadline runs from then. Returns
-   true when something changed. */
-function checkPings() {
-  if (Number(state.phase) !== 2) return false;
-  const now = Date.now();
-  const open = openPing();
-  if (open && now > open.deadline) {
-    state.pings = state.pings.map((p) => (p.id === open.id ? { ...p, done: true, missed: true } : p));
-    state.nextPingAt = nextPingTime(now);
-    localStorage.setItem(KEY, JSON.stringify(state));
-    return true;
-  }
-  if (!open && state.nextPingAt && now >= state.nextPingAt) {
-    state.pings = [...(state.pings || []), { id: now, firedAt: now, deadline: now + PING_WINDOW_MIN * 60 * 1000, done: false }];
-    state.nextPingAt = null;
-    localStorage.setItem(KEY, JSON.stringify(state));
-    return true;
-  }
-  return false;
-}
-
-function clock(t) {
-  return new Date(t).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-}
-
-function pingBanner() {
-  const p = openPing();
-  if (!p || location.hash.startsWith("#/app/ketones/2")) return "";
-  return `
-    <a class="ping-banner" href="#/app/ketones/2">
-      <b>PING. TEST NOW.</b>
-      <span>Photo of the meter by ${clock(p.deadline)}</span>
-    </a>`;
-}
-
-function pingForm() {
-  const p = openPing();
-  if (!p) return "";
-  return `
-    <div class="card ping-card" id="ping">
-      <p class="phase-tag" style="margin-top:0">RANDOM PING</p>
-      <h3 class="intro-title">TEST NOW.</h3>
-      <p class="lede" style="margin:0 0 6px">Prick, read, and photograph the meter with the number on the screen. Photo by <b>${clock(p.deadline)}</b>.</p>
-      <label class="field">Reading (mmol/L)</label>
-      <input id="ping-mmol" inputmode="decimal" placeholder="0.8" />
-      <label class="field">Photo of the meter</label>
-      <input id="ping-photo" type="file" accept="image/*" capture="environment" />
-      <button class="btn" style="margin-top:12px" data-act="answer-ping">SEND THE PING</button>
-      <p class="fine" id="ping-msg" role="status"></p>
-    </div>`;
-}
-
-function pingHistory() {
-  const done = (state.pings || []).filter((p) => p.done).slice().reverse();
-  if (!done.length) return `<p class="fine">No pings yet. The first one lands some time in the next couple of days. You will not know when, which is the point.</p>`;
-  return done
-    .map((p) => {
-      const mark = p.missed ? "MISSED" : p.clean ? "CLEAN" : p.late ? "LATE" : "UNDER 0.5";
-      return `
-      <div class="kit-row">
-        ${p.photo ? `<img class="ping-thumb" src="${p.photo}" alt="Meter photo" />` : `<div class="ping-thumb empty"></div>`}
-        <div>${p.missed ? "No reading" : `${escapeHtml(p.mmol)} mmol/L`}<div class="fine">${new Date(p.firedAt).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })}</div></div>
-        <span class="badge ${p.clean ? "" : "dim"}">${mark}</span>
-      </div>`;
-    })
-    .join("");
-}
-
-/* A phone photo is megabytes. The record only needs proof, so keep it small. */
-function shrinkPhoto(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const max = 360;
-      const k = Math.min(1, max / Math.max(img.width, img.height));
-      const c = document.createElement("canvas");
-      c.width = Math.round(img.width * k);
-      c.height = Math.round(img.height * k);
-      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(url);
-      resolve(c.toDataURL("image/jpeg", 0.6));
-    };
-    img.onerror = () => reject(new Error("That file could not be read as a photo."));
-    img.src = url;
-  });
 }
 
 function parseMmol(raw) {
@@ -891,20 +754,6 @@ function parseMmol(raw) {
 }
 
 /* --- Screens ------------------------------------------------------------ */
-
-function weekStrip() {
-  const letters = ["S", "M", "T", "W", "T", "F", "S"];
-  return `
-    <div class="week-strip" aria-label="Last seven mornings">
-      ${week()
-        .map((d) => {
-          const cls = d.before ? "before" : d.mmol === null ? "none" : d.mmol >= GATE3.threshold ? "hit" : "low";
-          return `<div class="day ${cls}"><small>${letters[new Date(d.t).getDay()]}</small><b>${d.mmol === null ? "&ndash;" : d.mmol.toFixed(1)}</b></div>`;
-        })
-        .join("")}
-    </div>
-    <p class="fine">Ember is a morning at ${GATE3.threshold} or above. Your first reading of the day counts as the morning.</p>`;
-}
 
 /* The Switch opens the way Phase 1 does: the intro film at the top, then the
    lessons as a list he ticks off, then the rest of the phase's work. */
@@ -920,7 +769,7 @@ function phase2Body() {
       ${PHASE2_INTRO_VIDEO
         ? `<video class="lesson-video" controls preload="metadata" playsinline src="./assets/${PHASE2_INTRO_VIDEO}"></video>`
         : `<div class="lesson-pending"><p class="etk">FILM BEING MADE</p><p>The intro film for The Switch is still being made.</p></div>`}
-      <p class="lede" style="margin:10px 0 0">Phase 1 was the before-photo. Phase 2 is where the factory changes fuel. The loading dock stops taking sugar, and the cells learn to run on what is already stocked in the warehouse. Four lessons below, then your mornings on the meter.</p>
+      <p class="lede" style="margin:10px 0 0">Phase 1 was the before-photo. Phase 2 is where the factory changes fuel. The loading dock stops taking sugar, and the cells learn to run on what is already stocked in the warehouse. Four lessons below. Tick them all off and Phase 3 opens.</p>
     </div>
     <div class="split"><span class="field" style="margin:0">Your lessons</span><span class="badge">${done} / ${PHASE2_LESSONS.length}</span></div>
     ${lessonRows()}
@@ -936,8 +785,11 @@ function phase2Body() {
         <a class="btn ghost small" href="#/app/kit/magnesium">MAGNESIUM</a>
       </div>
     </div>
-    <div class="split" style="margin-top:22px"><span class="field" style="margin:0">Your mornings</span><a class="badge" href="#/app/ketones/2">LOG ONE</a></div>
-    ${weekStrip()}
+    <div class="card">
+      <p class="field" style="margin-top:0">Your ketone readings</p>
+      <p class="lede" style="margin:0">Test whenever you like, as often as you like. Watch the number move as the factory changes fuel.</p>
+      <a class="btn ghost" href="#/app/ketones/2" style="margin-top:12px;display:block">LOG A READING</a>
+    </div>
     <div class="card">
       <p class="field" style="margin-top:0">Your warehouse</p>
       <div class="split"><span class="lede" style="margin:0">Visceral fat, from your scan</span><b class="big-num">${escapeHtml(vis || "--")}</b></div>
@@ -963,33 +815,12 @@ function lessonRows() {
 }
 
 function phase2Ketones() {
-  const rows = readingsFor(2)
-    .slice()
-    .reverse()
-    .map(
-      (k) => `
-      <div class="kit-row">
-        <div class="check ${Number(k.mmol) >= GATE3.threshold ? "on" : ""}"></div>
-        <div>${escapeHtml(k.mmol)} mmol/L<div class="fine">${new Date(k.at).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</div></div>
-        <span></span>
-      </div>`
-    )
-    .join("");
   return `
-    ${pingForm()}
-    <p class="lede">Test first thing every morning, before food and before coffee. The aim is most mornings at ${GATE3.threshold} mmol/L or above across a week. It is the trend that counts, not the best day.</p>
-    ${weekStrip()}
-    <label class="field">This morning's reading (mmol/L)</label>
-    <input id="mmol" inputmode="decimal" placeholder="0.6" />
-    <button class="btn" style="margin-top:12px" data-act="log-ketone">SAVE READING</button>
-    <p class="fine" id="mmol-msg" role="status"></p>
-    <div class="split" style="margin-top:22px"><span class="field" style="margin:0">Random pings</span><span class="badge">${gate3().clean} / ${GATE3.pings} CLEAN</span></div>
-    <p class="fine">Every so often the app asks you to test on the spot and photograph the meter within ${PING_WINDOW_MIN} minutes. A clean ping is a photo in time with ${GATE3.threshold} or above. It is how a morning number becomes a fact about your day.</p>
-    ${pingHistory()}
-    ${gate3Card()}
-    <div class="split" style="margin-top:22px"><span class="field" style="margin:0">Every reading</span><span class="badge">${readingsFor(2).length}</span></div>
-    ${rows || '<p class="fine">Nothing logged in Phase 2 yet.</p>'}
-    <p class="fine">Things that scramble a reading: ketone drinks, a big fast then a steak, a bad night, being crook, and some diabetes medicines. A reading means fat is on duty right now. Nothing more.</p>`;
+    <p class="lede">Test whenever you like, as often as you like. First thing, after a big feed, after a slip-up, before bed. There is no number to hit. Each reading shows you the factory switching fuel, and that is the whole point.</p>
+    ${readingForm()}
+    ${readingRows(2)}
+    <p class="fine">Things that scramble a reading: ketone drinks, a big fast then a steak, a bad night, being crook, and some diabetes medicines. A reading means fat is on duty right now. Nothing more.</p>
+    ${gate3Card()}`;
 }
 
 /* Old lesson addresses from the first cut of Phase 2, folded into the four. */
@@ -1183,8 +1014,8 @@ function clientFile(id) {
         </div>
         <h3 class="field">Phase 2 → 3 gate</h3>
         <div class="gate-box">
-          <div class="stat"><span class="field" style="margin:0">Morning ketones · 7 days</span><b>${c.ketones}</b><p class="fine">Needs most mornings at 0.5 mmol/L or above.</p></div>
-          <div class="stat"><span class="field" style="margin:0">Clean random pings</span><b>${c.pings}</b></div>
+          <div class="stat"><span class="field" style="margin:0">Phase 2 lessons</span><b>${c.lessons2 || "—"}</b><p class="fine">All four ticked off opens Phase 3.</p></div>
+          <div class="stat"><span class="field" style="margin:0">Ketone readings</span><b>${c.ketones}</b><p class="fine">Any time he likes. No target.</p></div>
           <div class="stat"><span class="field" style="margin:0">Time in Phase 2</span><b>${c.day} days</b><p class="fine">A guide, not a countdown</p></div>
         </div>
         <h3 class="field">Team notes</h3>
@@ -1253,7 +1084,7 @@ function bind() {
         n === 2
           ? "Phase 2 opens when every box in What you need is ticked. Open Phase 1 to see what is left."
           : n === 3
-            ? "Phase 3 opens when the Phase 2 gate is met: most mornings at 0.5 or above across a week, and three clean pings."
+            ? "Phase 3 opens when all four Phase 2 lessons are ticked off."
             : `${n === 5 ? "Graduate" : "Phase " + n} opens after the phase before it.`;
       note.hidden = false;
     };
@@ -1279,7 +1110,7 @@ function bind() {
       const all = KIT.every((k) => owned[k.id]);
       if (all && (Number(state.phase) || 1) < 2) {
         const now = Date.now();
-        save({ owned, phase: 2, phase2At: now, nextPingAt: nextPingTime(now) });
+        save({ owned, phase: 2, phase2At: now });
         location.hash = "#/app/my-body/2";
         return;
       }
@@ -1334,41 +1165,14 @@ function bind() {
     if (kind === "unlock-2") {
       if (!gate2().met) return;
       const now = Date.now();
-      save({ phase: 2, phase2At: now, nextPingAt: nextPingTime(now) });
+      save({ phase: 2, phase2At: now });
       location.hash = "#/app/my-body/2";
-    }
-    if (kind === "answer-ping") {
-      const p = openPing();
-      const msg = document.getElementById("ping-msg");
-      const mmol = parseMmol(val("ping-mmol"));
-      const file = document.getElementById("ping-photo")?.files?.[0];
-      if (!p) return;
-      if (mmol === null) return void (msg.textContent = "Type the number off the meter, like 0.8.");
-      if (!file) return void (msg.textContent = "The photo is the point. Take one of the meter showing the number.");
-      act.disabled = true;
-      msg.textContent = "Saving the photo…";
-      shrinkPhoto(file)
-        .then((photo) => {
-          const now = Date.now();
-          const late = now > p.deadline;
-          const done = { ...p, done: true, mmol: String(mmol), photo, answeredAt: now, late, clean: !late && mmol >= GATE3.threshold };
-          save({
-            pings: state.pings.map((x) => (x.id === p.id ? done : x)),
-            ketones: [...state.ketones, { mmol: String(mmol), at: now, phase: 2, ping: true }],
-            nextPingAt: nextPingTime(now),
-          });
-        })
-        .catch((err) => {
-          act.disabled = false;
-          msg.textContent = err.message;
-        });
     }
     };
   });
 }
 
 function render() {
-  checkPings();
   const root = document.getElementById("root");
   try {
     root.innerHTML = route();
@@ -1393,8 +1197,3 @@ document.addEventListener("focusout", () => {
   }, 0);
 });
 render();
-// A ping can fall due, or run out, while the app is open. Only redraw when it
-// does, so a half-typed reading is not wiped.
-setInterval(() => {
-  if (checkPings()) render();
-}, 20000);
