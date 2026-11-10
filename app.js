@@ -605,7 +605,7 @@ function ketones(phase) {
       ? "Your starting picture. Five tests, one every second day, on the diet you eat now. A typical old-diet reading is 0.0 to 0.2 mmol/L, and a low number is the honest starting point, not a failure."
       : "Your meter readings, kept in one place."}</p>
     <label class="field">Morning reading (mmol/L)</label>
-    <input id="mmol" placeholder="0.1" />
+    <input id="mmol" inputmode="decimal" placeholder="0.1" />
     <button class="btn" style="margin-top:12px" data-act="log-ketone">SAVE READING</button>
     <p class="fine" id="mmol-msg" role="status"></p>
     <p class="badge" style="margin-top:16px">${readingsFor(1).length}${phase === 1 ? " / 5" : ""}</p>
@@ -1381,6 +1381,19 @@ function render() {
 }
 
 window.addEventListener("hashchange", render);
+// Hide the tab bar while a field has focus, so the keyboard cannot push it
+// over the box he is typing in. Then bring the field into view above it.
+const isField = (el) => el && /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName) && el.type !== "file";
+document.addEventListener("focusin", (e) => {
+  if (!isField(e.target)) return;
+  document.body.classList.add("typing");
+  setTimeout(() => e.target.scrollIntoView({ block: "center" }), 300);
+});
+document.addEventListener("focusout", () => {
+  setTimeout(() => {
+    if (!isField(document.activeElement)) document.body.classList.remove("typing");
+  }, 0);
+});
 render();
 // A ping can fall due, or run out, while the app is open. Only redraw when it
 // does, so a half-typed reading is not wiped.

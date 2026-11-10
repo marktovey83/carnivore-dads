@@ -250,6 +250,10 @@ a.btn.ghost { color: var(--bone); }
   grid-template-columns: repeat(5, 1fr);
   align-items: start;
 }
+/* While he is typing, the Android keyboard shrinks the screen and the fixed
+   tab bar used to sit on top of the box and the save button. Get it out of
+   the way until he is done. */
+body.typing .tabs { display: none; }
 .tabs a, .tabs button {
   background: none; border: 0; color: #8a8374;
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
