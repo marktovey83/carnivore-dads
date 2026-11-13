@@ -23,8 +23,35 @@ Dad flow
 3. My body: the phase picker, then Phase 1's kit, bloods, scan and lessons
 4. Your factory (parametric silhouette from scan numbers)
 5. Body scan entry
-6. Baja salt lesson
+6. Phase 1 videos: an intro on My body, then a lesson behind every one of the
+   seven kit plates
 7. Tabs: Videos · Ketones · My body · Shop · Account
+
+## Phase 1 videos
+
+Every kit plate on My body has a lesson behind it, and the plate carries a
+WATCH mark so a man can see where the video is. The files live in `assets/`:
+
+| Plate | Route | File |
+| --- | --- | --- |
+| (intro, on My body) | `#/app/my-body/1` | `phase1-intro.mp4` |
+| Blood ketone meter | `#/app/kit/ketone-meter` | `phase1-ketone-meter.mp4` |
+| Mineralised salt | `#/app/kit/mineralised-salt` | `phase1-mineralised-salt.mp4` |
+| Fish oil | `#/app/kit/fish-oil` | `phase1-fish-oil.mp4` |
+| Magnesium glycinate | `#/app/kit/magnesium` | `phase1-magnesium.mp4` |
+| Smart watch | `#/app/kit/smart-watch` | `phase1-smart-watch.mp4` |
+| Gym membership | `#/app/kit/gym-membership` | `phase1-gym-membership.mp4` |
+| Body scan | `#/app/kit/body-scan` | `phase1-body-scan.mp4` |
+
+The written points under each video are the narration, not a rewrite of it.
+
+The body scan plate used to open the entry form. It opens the lesson now, and
+the lesson leads to the form at `#/app/scan`, which My body still links on its
+own card, so the form did not move further away than one tap.
+
+The videos are committed here, which is about 100MB of history. Before Phase 2
+is filmed that wants moving to a CDN, and the footage wants checking for stock
+watermarks at source: four of the seven needed a window cut out of them.
 
 ## The hub, after the production build
 

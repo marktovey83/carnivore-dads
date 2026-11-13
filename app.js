@@ -18,16 +18,16 @@ const KIT = [
   { id: "mag", name: "Magnesium glycinate", slug: "magnesium", video: "phase1-magnesium.mp4" },
   { id: "watch", name: "Smart watch with heart rate", slug: "smart-watch", video: "phase1-smart-watch.mp4" },
   { id: "gym", name: "Gym membership", slug: "gym-membership", video: "phase1-gym-membership.mp4" },
-  { id: "scan", name: "Body scan", href: "#/app/scan" },
+  { id: "scan", name: "Body scan", slug: "body-scan", video: "phase1-body-scan.mp4", hint: "Tick it when your scan is done." },
 ];
 
 function kitItem(key) {
   return KIT.find((k) => k.slug === key || k.id === key) || null;
 }
 
-/* The plate can only promise what is actually behind it. A play triangle on
-   all seven would have promised a video on four that have none, and on the
-   scan form. */
+/* The plate can only promise what is actually behind it. All seven have a
+   lesson now, so all seven say WATCH, but the marks stay keyed off what the
+   item really has so a Phase 2 plate with no film still says SOON. */
 function plateMark(item) {
   if (item.href) return "OPEN";
   if (item.video) return "WATCH";
@@ -256,10 +256,10 @@ function myBody(phase) {
     const have = !!state.owned[item.id];
     const hint = have
       ? "Got it."
-      : item.video && !watched
-        ? "Tick it when it is in your hands. The video tells you which one to buy."
-        : item.href
-          ? "Tick it when your scan is done."
+      : item.hint
+        ? item.hint
+        : item.video && !watched
+          ? "Tick it when it is in your hands. The video tells you which one to buy."
           : "Tick it when it is in your hands.";
     return `
       <div class="kit-row">
@@ -362,7 +362,7 @@ function scan() {
   return phone(
     `
     <p class="phase-tag">Phase 1 · Kit</p>
-    <h2 class="display">YOUR BODY SCAN.</h2>
+    <h2 class="display">YOUR SCAN NUMBERS.</h2>
     <p class="lede">Photograph every screen the machine gives you and we will read the numbers off it. Or type them in yourself.</p>
     <div class="row-btns"><button class="btn ghost">TAKE PHOTO</button><button class="btn ghost">UPLOAD</button></div>
     ${fields
@@ -389,6 +389,7 @@ function kitLesson(slug) {
   if (slug === "magnesium") return magnesium();
   if (slug === "smart-watch") return smartWatch();
   if (slug === "gym-membership") return gymMembership();
+  if (slug === "body-scan") return bodyScan();
   if (slug === "mineralised-salt" || slug === "baja-salt") return mineralisedSalt();
   const item = kitItem(slug);
   if (!item) return login();
@@ -402,6 +403,33 @@ function kitLesson(slug) {
     </div>
     <p class="fine">Nothing is held up by a lesson that does not exist yet. Tick this off whenever it is in your hands.</p>
     <button class="btn" data-watch="${item.id}">GOT IT &mdash; UNLOCK THE BOX</button>
+    <a class="btn ghost" href="#/app/my-body/1" style="margin-top:8px;display:block">BACK TO THE KIT</a>
+    ${legal()}
+  `,
+    "videos"
+  );
+}
+
+function bodyScan() {
+  return phone(
+    `
+    <p class="phase-tag">Phase 1 &middot; The kit</p>
+    <h2 class="display">YOUR BODY SCAN.</h2>
+    <video class="lesson-video" controls preload="metadata" playsinline
+           src="./assets/phase1-body-scan.mp4"></video>
+    <p class="fine">1:08</p>
+    <p class="field">What the video covers</p>
+    <ul class="points">
+      <li><strong>A MIRROR ONLY SHOWS THE PAINT</strong>We are not after a picture of the outside. We are after a picture of the inside. That is what the scan is for.</li>
+      <li><strong>WHAT IT ACTUALLY SHOWS</strong>The warehouse around the organs, the size of the engine, and what is really holding the place up.</li>
+      <li><strong>FOUNDATIONS, NOT THE MIRROR</strong>A good body is not built by chasing the glass. It is built on the fuel, the pipes, the quiet systems and the habit of showing up.</li>
+      <li><strong>INSIDE FIRST, OUTSIDE FOLLOWS</strong>When the inside is reset and running clean, the outside starts to change. That is the order, and it is that way round.</li>
+      <li><strong>IT IS A BASELINE, NOT A GRADE</strong>The starting picture of your factory, so every phase runs on real numbers instead of a feeling in the glass.</li>
+      <li><strong>DO NOT TREAT IT LIKE A SCORE</strong>Treat it like the blueprint. It is the plan of the place, not a mark out of ten.</li>
+      <li><strong>EDUCATION, NOT VANITY</strong>Learn the factory. Then run it.</li>
+    </ul>
+    <button class="btn" data-watch="scan">WATCHED IT &mdash; UNLOCK THE BOX</button>
+    <a class="btn ghost" href="#/app/scan" style="margin-top:8px;display:block">ENTER MY SCAN</a>
     <a class="btn ghost" href="#/app/my-body/1" style="margin-top:8px;display:block">BACK TO THE KIT</a>
     ${legal()}
   `,
