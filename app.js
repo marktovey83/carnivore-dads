@@ -84,6 +84,11 @@ function load() {
   }
 }
 let state = load();
+if (!state.scans) {
+  state.scans = state.owned && state.owned.scan
+    ? { 1: { at: null, data: fromLegacyScan(state.scan || {}) } }
+    : {};
+}
 function save(next) {
   state = { ...state, ...next };
   localStorage.setItem(KEY, JSON.stringify(state));
@@ -123,17 +128,17 @@ const TABS = [
   ["#/app/videos", "Videos", "videos", "M8 5v14l11-7z"],
   ["#/app/ketones", "Ketones", "ketones", "M12 3S5 11 5 15a7 7 0 0 0 14 0c0-4-7-12-7-12z"],
   ["#/app/my-body", "My body", "home", "M12 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6M8 10h8l-2 7 1 5M10 17l-1 5M8 10l-3 5M16 10l3 5"],
-  ["#/app/shop", "Shop", "shop", "M3 4h2l3 11h11l2-8H6M9 20h1M18 20h1"],
+  ["#/app/macros", "Macros", "macros", "M3 12h18a9 9 0 0 1-18 0M8 8c0-2 1-3 1-5M12 8c0-2 1-3 1-5M16 8c0-2 1-3 1-5"],
   ["#/app/account", "Account", "account", "M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M4 21v-2a8 8 0 0 1 16 0v2"],
 ];
 
 function tabs(active) {
-  // The Ketones tab goes straight to the blood ketones page for the phase he
-  // is in, so a reading is one tap away. PHASES on that page still opens the
+  // The Ketones and Macros tabs go straight to the page for the phase he is
+  // in, so the thing he needs is one tap away. PHASES on that page still opens the
   // picker for looking back at earlier phases.
   const cur = Math.min(4, Math.max(1, Number(state.phase) || 1));
   return `<nav class="tabs" aria-label="Main">${TABS.map(([href, label, key, icon]) => `
-    <a href="${key === "ketones" ? `${href}/${cur}` : href}" class="${key === "home" ? "tab-hub" : ""}${active === key ? " on" : ""}" ${active === key ? 'aria-current="page"' : ""}>
+    <a href="${key === "ketones" || key === "macros" ? `${href}/${cur}` : href}" class="${key === "home" ? "tab-hub" : ""}${active === key ? " on" : ""}" ${active === key ? 'aria-current="page"' : ""}>
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${icon}" /></svg>
       <span>${label}</span>
     </a>`).join("")}</nav>`;
@@ -212,7 +217,7 @@ function phaseShell(title, tab, phase, body) {
     return phone(`
       <p class="phase-tag">YOUR JOURNEY</p>
       <h2 class="display">${title.toUpperCase()}.</h2>
-      <p class="lede">Choose a phase to open. Your progress is shared across all three tabs.</p>
+      <p class="lede">Choose a phase to open. Your progress is shared across all your tabs.</p>
       <nav class="phase-picker" aria-label="Program phase">${rows}</nav>
       <p class="fine" id="phase-note" role="status" hidden></p>
     `, tab);
@@ -301,13 +306,15 @@ function myBody(phase) {
     <div class="card">
       <p class="field" style="margin-top:0">Your scan</p>
       <p class="lede" style="margin:0">Your results exactly as the machine printed them. Reading a scan file automatically is not connected, so enter the numbers.</p>
-      <a class="btn ghost" href="#/app/scan" style="margin-top:12px;display:block">ENTER A SCAN</a>
+      <a class="btn ghost" href="#/app/scan" style="margin-top:12px;display:block">OPEN YOUR BODY SCANS</a>
       <a class="btn ghost" href="#/app/factory" style="margin-top:8px;display:block">OPEN YOUR FACTORY</a>
     </div>
     <div class="card">
       <p class="field" style="margin-top:0">Learn</p>
       <p class="lede" style="margin:0">${phase === 1 ? "Basic macros and Your body lessons live in your phase library." : phase === 2 ? "Every Phase 2 lesson in one list." : "Open the lessons for this phase."}</p>
       <a class="btn ghost" href="#/app/videos/${phase}" style="margin-top:12px;display:block">OPEN PHASE VIDEOS</a>
+      <a class="btn ghost" href="#/app/macros/${phase}" style="margin-top:8px;display:block">OPEN PHASE MACROS</a>
+      <a class="btn ghost" href="#/app/shop" style="margin-top:8px;display:block">OPEN THE SHOP</a>
     </div>
     ${legal()}
   `);
@@ -351,36 +358,163 @@ function factory() {
   );
 }
 
-function scan() {
-  const fields = [
-    ["height", "Height", "cm"],
-    ["waist", "Waist circumference", "cm"],
-    ["hips", "Hip circumference", "cm"],
-    ["weight", "Weight", "kg"],
-    ["bmi", "BMI", ""],
-    ["bodyFat", "Body fat %", "%"],
-    ["smm", "Skeletal muscle mass (SMM)", "kg"],
-    ["visceral", "Visceral fat", "level"],
-  ];
+/* Body scans: one per phase for the first three phases. Each opens when
+   his phase does and he can fix it as often as he likes during that phase.
+   When he moves on to the next phase it locks, so the before-and-after
+   stays honest. Fields follow the Technogym Checkup
+   body composition report. */
+const SCAN_COUNT = 3;
+const SCAN_FIELDS = [
+  ["height", "Height", "cm", "0.1"],
+  ["weight", "Weight", "kg", "0.1"],
+  ["bf", "Body fat", "%", "0.1"],
+  ["visceral", "Visceral fat", "level", "0.1"],
+  ["fatMass", "Fat mass", "kg", "0.1"],
+  ["muscle", "Muscle / lean mass", "kg", "0.1"],
+  ["bone", "Bone mineral", "kg", "0.01"],
+  ["water", "Body water", "%", "0.1"],
+  ["phaseAngle", "Phase angle", "°", "0.1"],
+  ["waist", "Waist", "cm", "0.1"],
+  ["hip", "Hip", "cm", "0.1"],
+  ["bmi", "BMI", "", "0.1"],
+];
+/* The eight that show on the profile, visceral first because it is the one
+   the factory is built around. */
+const SCAN_SUMMARY = ["visceral", "bf", "weight", "height", "muscle", "fatMass", "waist", "phaseAngle"];
+
+function fromLegacyScan(o) {
+  const map = { height: "height", weight: "weight", bodyFat: "bf", visceral: "visceral", waist: "waist", hips: "hip", bmi: "bmi", smm: "muscle" };
+  const d = {};
+  Object.entries(map).forEach(([from, to]) => {
+    const n = parseFloat(o[from]);
+    if (!Number.isNaN(n)) d[to] = n;
+  });
+  return d;
+}
+
+function toLegacyScan(d) {
+  return { height: d.height, weight: d.weight, bodyFat: d.bf, visceral: d.visceral, waist: d.waist, hips: d.hip, bmi: d.bmi, smm: d.muscle };
+}
+
+/* future: his phase is not here yet. open: this is his phase, so he can
+   enter or edit it. locked: he has moved on and it is saved. missed: he
+   moved on without saving one. */
+function scanState(n) {
+  const phase = Number(state.phase) || 1;
+  if (n > phase) return "future";
+  if (n === phase) return "open";
+  return (state.scans || {})[n] ? "locked" : "missed";
+}
+
+function latestScan() {
+  for (let n = SCAN_COUNT; n >= 1; n--) if ((state.scans || {})[n]) return { n, ...(state.scans[n]) };
+  return null;
+}
+
+function metric(d, k) {
+  const f = SCAN_FIELDS.find((x) => x[0] === k);
+  const v = d[k];
+  const shown = v === undefined || v === null || v === "" ? "&mdash;" : `${escapeHtml(String(v))}${f[2] && f[2] !== "level" ? (f[2] === "%" || f[2] === "°" ? f[2] : " " + f[2]) : ""}`;
+  return `<div class="metric${k === "visceral" ? " key" : ""}"><b>${shown}</b><span>${f[1]}${k === "visceral" ? " (key)" : ""}</span></div>`;
+}
+
+function scanProfile() {
+  const last = latestScan();
+  const d = last ? last.data : null;
+  const fat = d && d.bf ? Number(d.bf) : 25;
+  const vis = d && d.visceral ? Number(d.visceral) : 10;
+  const cards = Array.from({ length: SCAN_COUNT }, (_, i) => {
+    const n = i + 1;
+    const st = scanState(n);
+    const has = !!(state.scans || {})[n];
+    const status = { future: "Not open yet", open: has ? "Saved &middot; edit" : "Open", locked: "Locked", missed: "Not taken" }[st];
+    const label = `<b>Scan ${n}</b><small>Phase ${n}</small><em>${status}</em>`;
+    return st === "future" || st === "missed"
+      ? `<div class="scan-card locked" aria-disabled="true">${label}</div>`
+      : `<a class="scan-card${st === "open" ? " is-open" : ""}" href="#/app/scan/${n}">${label}</a>`;
+  }).join("");
+  const panels = Array.from({ length: SCAN_COUNT }, (_, i) => SCAN_COUNT - i)
+    .filter((n) => (state.scans || {})[n])
+    .map((n) => {
+      const m = state.scans[n].data;
+      return `
+      <div class="card">
+        <div class="split"><strong>SCAN ${n} &middot; PHASE ${n}</strong><span class="badge">${scanState(n) === "open" ? "EDITABLE IN PHASE " + n : "LOCKED"}</span></div>
+        <div class="metrics">${SCAN_SUMMARY.map((k) => metric(m, k)).join("")}</div>
+        <a class="linkish" href="#/app/scan/${n}" style="display:block;margin-top:10px">See all twelve numbers &rsaquo;</a>
+      </div>`;
+    }).join("");
   return phone(
     `
-    <p class="phase-tag">Phase 1 · Kit</p>
-    <h2 class="display">YOUR SCAN NUMBERS.</h2>
-    <p class="lede">Photograph every screen the machine gives you and we will read the numbers off it. Or type them in yourself.</p>
-    <div class="row-btns"><button class="btn ghost">TAKE PHOTO</button><button class="btn ghost">UPLOAD</button></div>
-    ${fields
-      .map(
-        ([k, label, unit]) => `
-      <div class="kit-row">
-        <div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div>
-        <div><label class="field" style="margin-top:0">${label}</label><input data-scan="${k}" value="${escapeAttr(state.scan[k] || "")}" /></div>
-        <span class="fine">${unit}</span>
-      </div>`
-      )
-      .join("")}
-    <p class="fine">BMI is on the page because the machine prints it. The program still tells you to put the scales in the cupboard.</p>
-    <button class="btn" style="margin-top:16px" data-act="save-scan">SAVE MY SCAN</button>
-    <a class="btn ghost" href="#/app/factory" style="margin-top:8px;display:block">SEE THE FACTORY</a>
+    <p class="phase-tag">Your factory profile</p>
+    <h2 class="display">BODY SCAN.</h2>
+    <div class="body-stage">
+      <div class="sil" style="transform:scale(${1 + (fat - 15) / 80})">
+        <div class="arm l"></div><div class="arm r"></div>
+        <div class="head"></div>
+        <div class="torso"><div class="gut" style="opacity:${0.25 + vis / 30};height:${28 + vis * 1.4}%"></div></div>
+        <div class="legs"><div class="leg"></div><div class="leg"></div></div>
+      </div>
+    </div>
+    <p class="fine" style="text-align:center">${last ? `Scan ${last.n} &middot; Phase ${last.n} &middot; ${d.bf != null ? escapeHtml(String(d.bf)) + "% body fat" : "no body fat saved"}` : "No scan saved yet. Open Scan 1."}</p>
+    <div class="scan-cards">${cards}</div>
+    ${panels || `<div class="card"><p class="fine" style="margin:0;text-align:center">No scan saved in your profile yet.</p></div>`}
+    <div class="teaching">
+      Same height. Same weight. Different engine.<br>
+      The scan is the blueprint of your factory, not a score.<br>
+      Visceral fat is the key number. Inside first.
+    </div>
+    <a class="btn ghost" href="#/app/factory" style="margin-top:16px;display:block">SEE THE FACTORY</a>
+    ${legal()}
+  `,
+    "home"
+  );
+}
+
+function scanInput(n) {
+  const st = scanState(n);
+  if (st === "future" || st === "missed") {
+    return phone(`
+      <a class="linkish phase-back" href="#/app/scan">&lsaquo; BODY SCAN</a>
+      <p class="phase-tag">Scan ${n} &middot; Phase ${n}</p>
+      <h2 class="display">${st === "future" ? "NOT OPEN YET." : "NOT TAKEN."}</h2>
+      <p class="lede">${st === "future"
+        ? `Scan ${n} opens when you reach Phase ${n}. Your earlier scans are on your profile.`
+        : `No scan was saved during Phase ${n}, and it closed when you moved on. Your other scans are on your profile.`}</p>
+      <a class="btn ghost" href="#/app/scan" style="margin-top:12px;display:block">BACK TO YOUR PROFILE</a>
+    `, "home");
+  }
+  const saved = st === "locked";
+  const entry = (state.scans || {})[n];
+  const d = entry ? entry.data : n === 1 ? fromLegacyScan(state.owned.scan ? state.scan : {}) : {};
+  return phone(
+    `
+    <a class="linkish phase-back" href="#/app/scan">&lsaquo; BODY SCAN</a>
+    <p class="phase-tag">Scan ${n} &middot; Phase ${n}</p>
+    <h2 class="display">${saved ? "YOUR SCAN, LOCKED." : entry ? "YOUR SCAN." : "ENTER YOUR SCAN."}</h2>
+    <p class="lede">${saved
+      ? `Saved${entry.at ? " on " + new Date(entry.at).toLocaleDateString() : ""}. It locked when you moved on from Phase ${n}, so it stays your Phase ${n} record.`
+      : `Phase ${n} body scan. Type the numbers off your Technogym report. You can come back and fix them any time during Phase ${n}. It locks when you move on to Phase ${n + 1}.`}</p>
+    ${saved ? "" : `
+    <label class="upload-box">
+      <input type="file" id="scan-file" accept=".pdf,.png,.jpg,.jpeg,.webp" />
+      <b>Upload your scan report (PDF or photo)</b>
+      <span class="fine">Reading the report for you is coming. For now, type the numbers below.</span>
+    </label>
+    <p class="fine" id="scan-file-msg" role="status"></p>`}
+    <div class="scan-grid">
+      ${SCAN_FIELDS.map(([k, label, unit, step]) => `
+        <div>
+          <label class="field${k === "visceral" ? " key-label" : ""}" for="scan-${k}">${label}${unit ? ` (${unit})` : ""}</label>
+          <input id="scan-${k}" data-scan="${k}" type="number" inputmode="decimal" step="${step}" value="${d[k] != null ? escapeAttr(String(d[k])) : ""}" ${saved ? "readonly" : ""} ${k === "visceral" ? 'placeholder="from scan"' : ""} />
+        </div>`).join("")}
+    </div>
+    ${saved
+      ? `<button class="btn" disabled style="margin-top:14px">LOCKED INTO YOUR PROFILE</button>`
+      : `<button class="btn" style="margin-top:14px" data-act="save-scan" data-scan-n="${n}">${entry ? "SAVE CHANGES" : "SAVE MY SCAN"}</button>
+    <p class="fine" id="scan-msg" role="status"></p>`}
+    <p class="fine">Numbers follow the Technogym Checkup body composition report. Visceral fat is the key number for the factory. BMI is here because the machine prints it; the scales still live in the cupboard.</p>
+    <a class="btn ghost" href="#/app/scan" style="margin-top:8px;display:block">BACK TO YOUR PROFILE</a>
   `,
     "home"
   );
@@ -432,7 +566,7 @@ function bodyScan() {
       <li><strong>EDUCATION, NOT VANITY</strong>Learn the factory. Then run it.</li>
     </ul>
     <button class="btn" data-watch="scan">WATCHED IT &mdash; UNLOCK THE BOX</button>
-    <a class="btn ghost" href="#/app/scan" style="margin-top:8px;display:block">ENTER MY SCAN</a>
+    <a class="btn ghost" href="#/app/scan/1" style="margin-top:8px;display:block">ENTER MY SCAN</a>
     <a class="btn ghost" href="#/app/my-body/1" style="margin-top:8px;display:block">BACK TO THE KIT</a>
     ${legal()}
   `,
@@ -657,6 +791,36 @@ function ketones(phase) {
   `);
 }
 
+/* Macros for each phase, in one place. Phase 2 uses the Macros lesson as
+   written. The others list what their page will cover until it is written,
+   rather than inventing advice. */
+const MACROS_PLANNED = {
+  1: ["Protein, fat and carbs named in your job's language", "What is on your plate now, before anything changes", "What the switch in Phase 2 will ask of your plate"],
+  3: ["How the liver handles what you eat", "Eating around intro fasting"],
+  4: ["Timing: when you eat", "Amounts: how much you eat", "When carbs come back, and how", "How the factory switches back to fat"],
+};
+
+function macros(phase) {
+  if (phase === 2) {
+    const l = PHASE2_LESSONS.find((x) => x.slug === "macros");
+    return phaseShell("Macros", "macros", phase, `
+      <p class="lede">${l.sub}.</p>
+      <ul class="points">
+        ${l.points.map(([h, t]) => `<li><strong>${h}</strong>${t}</li>`).join("")}
+      </ul>
+      <a class="btn ghost" href="#/app/lesson/2/macros" style="margin-top:12px;display:block">OPEN THE MACROS LESSON</a>
+    `);
+  }
+  const planned = MACROS_PLANNED[phase] || [];
+  return phaseShell("Macros", "macros", phase, `
+    <div class="lesson-pending"><p class="etk">PAGE BEING WRITTEN</p><p>The macros for this phase are still being written. This is what the page will cover.</p></div>
+    <ul class="points">
+      ${planned.map((t) => `<li><strong>${t.toUpperCase()}</strong></li>`).join("")}
+    </ul>
+    ${Number(state.phase) >= 2 ? '<a class="btn ghost" href="#/app/macros/2" style="margin-top:12px;display:block">READ PHASE 2 MACROS</a>' : ""}
+  `);
+}
+
 function shop() {
   return phone(`
     <p class="phase-tag">YOUR KIT</p>
@@ -665,7 +829,7 @@ function shop() {
     ${SHOP.map(([name, price]) => `<div class="kit-row"><div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div><div>${name}</div><strong>$${price}</strong></div>`).join("")}
     <a class="btn ghost" href="#/app/my-body" style="margin-top:16px;display:block">BACK TO YOUR KIT</a>
     <a class="btn ghost" href="#/app/videos" style="margin-top:8px;display:block">VIEW THE GUIDES</a>
-  `, "shop");
+  `, "none");
 }
 
 function account() {
@@ -695,6 +859,7 @@ function account() {
       Show me gyms and butchers near me. Off by default.
     </label>
     <button class="btn" style="margin-top:18px" data-act="save-account">SAVE DETAILS</button>
+    <a class="btn ghost" href="#/app/shop" style="margin-top:18px;display:block">OPEN THE SHOP</a>
     ${installCard()}
     <a class="btn ghost" href="#/" style="margin-top:10px;display:block">BACK TO LOG IN</a>
     ${legal()}
@@ -1108,19 +1273,22 @@ function route() {
   // The three hub tabs take an optional phase: #/app/my-body opens the picker,
   // #/app/my-body/2 opens phase 2. Anything above the phase he is up to is
   // refused by phaseShell rather than routed to.
-  const hub = hash.match(/^\/app\/(my-body|ketones|videos)(?:\/(\d))?$/);
+  const hub = hash.match(/^\/app\/(my-body|ketones|macros|videos)(?:\/(\d))?$/);
   if (hub) {
     const phase = hub[2] ? Math.min(5, Math.max(1, Number(hub[2]))) : null;
     const open = phase !== null && phase <= (Number(state.phase) || 1) ? phase : null;
     if (hub[1] === "my-body") return myBody(open);
     if (hub[1] === "ketones") return ketones(open);
+    if (hub[1] === "macros") return macros(open);
     return videos(open);
   }
   if (hash === "/app/phase-1") return myBody(1);
   const les = hash.match(/^\/app\/lesson\/(\d)\/([a-z-]+)$/);
   if (les) return lesson(Number(les[1]), les[2]);
   if (hash === "/app/factory") return factory();
-  if (hash === "/app/scan") return scan();
+  if (hash === "/app/scan") return scanProfile();
+  const scanN = hash.match(/^\/app\/scan\/(\d)$/);
+  if (scanN && Number(scanN[1]) >= 1 && Number(scanN[1]) <= SCAN_COUNT) return scanInput(Number(scanN[1]));
   if (hash.startsWith("/app/kit/")) return kitLesson(hash.slice("/app/kit/".length));
   if (hash === "/app/shop") return shop();
   if (hash === "/app/account") return account();
@@ -1157,6 +1325,14 @@ function bind() {
       note.hidden = false;
     };
   });
+  // Reading a report automatically is not connected yet, so a chosen file
+  // gets an honest answer instead of numbers that were never on it.
+  const scanFile = document.getElementById("scan-file");
+  if (scanFile) scanFile.onchange = () => {
+    const f = scanFile.files && scanFile.files[0];
+    const msg = document.getElementById("scan-file-msg");
+    if (f && msg) msg.textContent = `Got ${f.name}. Reading reports automatically is not switched on yet, so type the numbers from it below.`;
+  };
   const countrySelect = document.getElementById("country");
   if (countrySelect) countrySelect.onchange = () => save({ country: countrySelect.value });
   document.querySelectorAll("[data-watch]").forEach((btn) => {
@@ -1211,12 +1387,26 @@ function bind() {
       });
     }
     if (kind === "save-scan") {
-      const scan = { ...state.scan };
+      const n = Number(act.getAttribute("data-scan-n")) || 1;
+      if (scanState(n) !== "open") return;
+      const data = {};
       document.querySelectorAll("[data-scan]").forEach((el) => {
-        scan[el.getAttribute("data-scan")] = el.value;
+        const v = parseFloat(String(el.value).replace(",", "."));
+        if (!Number.isNaN(v)) data[el.getAttribute("data-scan")] = v;
       });
-      save({ scan, watched: { ...state.watched, scan: true }, owned: { ...state.owned, scan: true } });
-      location.hash = "#/app/factory";
+      const msg = document.getElementById("scan-msg");
+      if (data.bf == null && data.visceral == null) {
+        if (msg) msg.textContent = "Enter at least your body fat % or your visceral fat.";
+        return;
+      }
+      const scans = { ...state.scans, [n]: { at: Date.now(), data } };
+      const next = { scans, scan: { ...state.scan, ...toLegacyScan(data) } };
+      if (n === 1) {
+        next.watched = { ...state.watched, scan: true };
+        next.owned = { ...state.owned, scan: true };
+      }
+      location.hash = "#/app/scan";
+      save(next);
     }
     if (kind === "log-ketone") {
       const mmol = parseMmol(val("mmol"));

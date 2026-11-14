@@ -25,7 +25,7 @@ Dad flow
 5. Body scan entry
 6. Phase 1 videos: an intro on My body, then a lesson behind every one of the
    seven kit plates
-7. Tabs: Videos · Ketones · My body · Shop · Account
+7. Tabs: Videos · Ketones · My body · Macros · Account (Shop opens from Account and My body)
 
 ## Phase 1 videos
 
@@ -104,7 +104,7 @@ Hash routes:
 - `#/reset` Start your reset
 - `#/app/my-body` My body, the phase picker
 - `#/app/my-body/1` Phase 1
-- `#/app/ketones` · `#/app/videos` · `#/app/shop`
+- `#/app/ketones` · `#/app/macros` · `#/app/videos` · `#/app/shop`
 - `#/admin` Staff
 
 ## Phase 2: The Switch
