@@ -128,8 +128,12 @@ const TABS = [
 ];
 
 function tabs(active) {
+  // The Ketones tab goes straight to the blood ketones page for the phase he
+  // is in, so a reading is one tap away. PHASES on that page still opens the
+  // picker for looking back at earlier phases.
+  const cur = Math.min(4, Math.max(1, Number(state.phase) || 1));
   return `<nav class="tabs" aria-label="Main">${TABS.map(([href, label, key, icon]) => `
-    <a href="${href}" class="${key === "home" ? "tab-hub" : ""}${active === key ? " on" : ""}" ${active === key ? 'aria-current="page"' : ""}>
+    <a href="${key === "ketones" ? `${href}/${cur}` : href}" class="${key === "home" ? "tab-hub" : ""}${active === key ? " on" : ""}" ${active === key ? 'aria-current="page"' : ""}>
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${icon}" /></svg>
       <span>${label}</span>
     </a>`).join("")}</nav>`;
@@ -647,7 +651,7 @@ function ketones(phase) {
       ? "Your starting picture. Test whenever you like, as often as you like, on the diet you eat now. After a sugary meal. After a big feed. First thing, last thing, whenever you are curious. On the old diet the number usually sits low, around 0.0 to 0.2 mmol/L. That is not a failure. It is the honest before-photo, and the more readings you log, the sharper it gets."
       : "Your meter readings, kept in one place."}</p>
     ${readingForm()}
-    ${readingRows(1)}
+    ${readingRows(phase)}
     <p class="fine">A reading is a fact about right now, not a score. The dial is a scale, not a target.</p>
     <a class="btn ghost" href="#/app/kit/ketone-meter" style="margin-top:12px;display:block">WATCH: YOUR KETONE METER</a>
   `);
