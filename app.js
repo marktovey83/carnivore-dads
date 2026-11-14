@@ -123,17 +123,17 @@ const TABS = [
   ["#/app/videos", "Videos", "videos", "M8 5v14l11-7z"],
   ["#/app/ketones", "Ketones", "ketones", "M12 3S5 11 5 15a7 7 0 0 0 14 0c0-4-7-12-7-12z"],
   ["#/app/my-body", "My body", "home", "M12 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6M8 10h8l-2 7 1 5M10 17l-1 5M8 10l-3 5M16 10l3 5"],
-  ["#/app/shop", "Shop", "shop", "M3 4h2l3 11h11l2-8H6M9 20h1M18 20h1"],
+  ["#/app/macros", "Macros", "macros", "M3 12h18a9 9 0 0 1-18 0M8 8c0-2 1-3 1-5M12 8c0-2 1-3 1-5M16 8c0-2 1-3 1-5"],
   ["#/app/account", "Account", "account", "M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M4 21v-2a8 8 0 0 1 16 0v2"],
 ];
 
 function tabs(active) {
-  // The Ketones tab goes straight to the blood ketones page for the phase he
-  // is in, so a reading is one tap away. PHASES on that page still opens the
+  // The Ketones and Macros tabs go straight to the page for the phase he is
+  // in, so the thing he needs is one tap away. PHASES on that page still opens the
   // picker for looking back at earlier phases.
   const cur = Math.min(4, Math.max(1, Number(state.phase) || 1));
   return `<nav class="tabs" aria-label="Main">${TABS.map(([href, label, key, icon]) => `
-    <a href="${key === "ketones" ? `${href}/${cur}` : href}" class="${key === "home" ? "tab-hub" : ""}${active === key ? " on" : ""}" ${active === key ? 'aria-current="page"' : ""}>
+    <a href="${key === "ketones" || key === "macros" ? `${href}/${cur}` : href}" class="${key === "home" ? "tab-hub" : ""}${active === key ? " on" : ""}" ${active === key ? 'aria-current="page"' : ""}>
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="${icon}" /></svg>
       <span>${label}</span>
     </a>`).join("")}</nav>`;
@@ -212,7 +212,7 @@ function phaseShell(title, tab, phase, body) {
     return phone(`
       <p class="phase-tag">YOUR JOURNEY</p>
       <h2 class="display">${title.toUpperCase()}.</h2>
-      <p class="lede">Choose a phase to open. Your progress is shared across all three tabs.</p>
+      <p class="lede">Choose a phase to open. Your progress is shared across all your tabs.</p>
       <nav class="phase-picker" aria-label="Program phase">${rows}</nav>
       <p class="fine" id="phase-note" role="status" hidden></p>
     `, tab);
@@ -308,6 +308,8 @@ function myBody(phase) {
       <p class="field" style="margin-top:0">Learn</p>
       <p class="lede" style="margin:0">${phase === 1 ? "Basic macros and Your body lessons live in your phase library." : phase === 2 ? "Every Phase 2 lesson in one list." : "Open the lessons for this phase."}</p>
       <a class="btn ghost" href="#/app/videos/${phase}" style="margin-top:12px;display:block">OPEN PHASE VIDEOS</a>
+      <a class="btn ghost" href="#/app/macros/${phase}" style="margin-top:8px;display:block">OPEN PHASE MACROS</a>
+      <a class="btn ghost" href="#/app/shop" style="margin-top:8px;display:block">OPEN THE SHOP</a>
     </div>
     ${legal()}
   `);
@@ -657,6 +659,36 @@ function ketones(phase) {
   `);
 }
 
+/* Macros for each phase, in one place. Phase 2 uses the Macros lesson as
+   written. The others list what their page will cover until it is written,
+   rather than inventing advice. */
+const MACROS_PLANNED = {
+  1: ["Protein, fat and carbs named in your job's language", "What is on your plate now, before anything changes", "What the switch in Phase 2 will ask of your plate"],
+  3: ["How the liver handles what you eat", "Eating around intro fasting"],
+  4: ["Timing: when you eat", "Amounts: how much you eat", "When carbs come back, and how", "How the factory switches back to fat"],
+};
+
+function macros(phase) {
+  if (phase === 2) {
+    const l = PHASE2_LESSONS.find((x) => x.slug === "macros");
+    return phaseShell("Macros", "macros", phase, `
+      <p class="lede">${l.sub}.</p>
+      <ul class="points">
+        ${l.points.map(([h, t]) => `<li><strong>${h}</strong>${t}</li>`).join("")}
+      </ul>
+      <a class="btn ghost" href="#/app/lesson/2/macros" style="margin-top:12px;display:block">OPEN THE MACROS LESSON</a>
+    `);
+  }
+  const planned = MACROS_PLANNED[phase] || [];
+  return phaseShell("Macros", "macros", phase, `
+    <div class="lesson-pending"><p class="etk">PAGE BEING WRITTEN</p><p>The macros for this phase are still being written. This is what the page will cover.</p></div>
+    <ul class="points">
+      ${planned.map((t) => `<li><strong>${t.toUpperCase()}</strong></li>`).join("")}
+    </ul>
+    ${Number(state.phase) >= 2 ? '<a class="btn ghost" href="#/app/macros/2" style="margin-top:12px;display:block">READ PHASE 2 MACROS</a>' : ""}
+  `);
+}
+
 function shop() {
   return phone(`
     <p class="phase-tag">YOUR KIT</p>
@@ -665,7 +697,7 @@ function shop() {
     ${SHOP.map(([name, price]) => `<div class="kit-row"><div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div><div>${name}</div><strong>$${price}</strong></div>`).join("")}
     <a class="btn ghost" href="#/app/my-body" style="margin-top:16px;display:block">BACK TO YOUR KIT</a>
     <a class="btn ghost" href="#/app/videos" style="margin-top:8px;display:block">VIEW THE GUIDES</a>
-  `, "shop");
+  `, "none");
 }
 
 function account() {
@@ -695,6 +727,7 @@ function account() {
       Show me gyms and butchers near me. Off by default.
     </label>
     <button class="btn" style="margin-top:18px" data-act="save-account">SAVE DETAILS</button>
+    <a class="btn ghost" href="#/app/shop" style="margin-top:18px;display:block">OPEN THE SHOP</a>
     ${installCard()}
     <a class="btn ghost" href="#/" style="margin-top:10px;display:block">BACK TO LOG IN</a>
     ${legal()}
@@ -1108,12 +1141,13 @@ function route() {
   // The three hub tabs take an optional phase: #/app/my-body opens the picker,
   // #/app/my-body/2 opens phase 2. Anything above the phase he is up to is
   // refused by phaseShell rather than routed to.
-  const hub = hash.match(/^\/app\/(my-body|ketones|videos)(?:\/(\d))?$/);
+  const hub = hash.match(/^\/app\/(my-body|ketones|macros|videos)(?:\/(\d))?$/);
   if (hub) {
     const phase = hub[2] ? Math.min(5, Math.max(1, Number(hub[2]))) : null;
     const open = phase !== null && phase <= (Number(state.phase) || 1) ? phase : null;
     if (hub[1] === "my-body") return myBody(open);
     if (hub[1] === "ketones") return ketones(open);
+    if (hub[1] === "macros") return macros(open);
     return videos(open);
   }
   if (hash === "/app/phase-1") return myBody(1);
