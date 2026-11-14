@@ -10,7 +10,6 @@ export function Login() {
   const nav = useNavigate();
   const [email, setEmail] = useState(state.email || "");
   const [password, setPassword] = useState("");
-  const [open, setOpen] = useState(false);
 
   return (
     <Phone>
@@ -41,30 +40,20 @@ export function Login() {
         </Link>
         <p className="legal">Education and advice only. Your GP owns your medicine.</p>
         <div className="country-row">
-          <div className="split">
-            <span className="field" style={{ margin: 0 }}>
-              Your country
-            </span>
-            <button className="linkish" onClick={() => setOpen(!open)}>
-              {COUNTRIES.find((c) => c.code === state.country)?.name}
-            </button>
-          </div>
-          {open && (
-            <div className="country-list">
-              {COUNTRIES.map((c) => (
-                <button
-                  key={c.code}
-                  className={c.code === state.country ? "on" : ""}
-                  onClick={() => {
-                    patch({ country: c.code });
-                    setOpen(false);
-                  }}
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
-          )}
+          <label className="field" htmlFor="country" style={{ margin: "0 0 7px" }}>
+            Your country
+          </label>
+          <select
+            id="country"
+            value={state.country}
+            onChange={(e) => patch({ country: e.target.value })}
+          >
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
     </Phone>

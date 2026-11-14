@@ -154,7 +154,6 @@ function legal() {
 }
 
 function login() {
-  const name = COUNTRIES.find((c) => c[0] === state.country)?.[1];
   return phone(`
     <p class="lede" style="text-align:center">Know your body. Build your habits. Keep showing up.</p>
     <a class="btn" href="#/app/my-body" style="margin-top:26px;display:block">LOG IN</a>
@@ -162,10 +161,10 @@ function login() {
     <a class="btn ghost" href="#/reset">REGISTER</a>
     <p class="legal">Education and advice only. Your GP owns your medicine.</p>
     <div class="country-row">
-      <div class="split"><span class="field" style="margin:0">Your country</span><span>${name}</span></div>
-      <div class="country-list">
-        ${COUNTRIES.map(([code, label]) => `<button data-country="${code}" class="${code === state.country ? "on" : ""}">${label}</button>`).join("")}
-      </div>
+      <label class="field" for="country" style="margin:0 0 7px">Your country</label>
+      <select id="country" aria-label="Your country">
+        ${COUNTRIES.map(([code, label]) => `<option value="${code}" ${code === state.country ? "selected" : ""}>${label}</option>`).join("")}
+      </select>
     </div>
   `);
 }
@@ -1154,9 +1153,8 @@ function bind() {
       note.hidden = false;
     };
   });
-  document.querySelectorAll("[data-country]").forEach((btn) => {
-    btn.onclick = () => save({ country: btn.getAttribute("data-country") });
-  });
+  const countrySelect = document.getElementById("country");
+  if (countrySelect) countrySelect.onchange = () => save({ country: countrySelect.value });
   document.querySelectorAll("[data-watch]").forEach((btn) => {
     btn.onclick = () => save({ watched: { ...state.watched, [btn.getAttribute("data-watch")]: true } });
   });
