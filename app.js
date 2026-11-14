@@ -359,8 +359,9 @@ function factory() {
 }
 
 /* Body scans: one per phase for the first three phases. Each opens when
-   his phase does, and once saved it is locked into his profile so the
-   before-and-after stays honest. Fields follow the Technogym Checkup
+   his phase does and he can fix it as often as he likes during that phase.
+   When he moves on to the next phase it locks, so the before-and-after
+   stays honest. Fields follow the Technogym Checkup
    body composition report. */
 const SCAN_COUNT = 3;
 const SCAN_FIELDS = [
@@ -395,10 +396,14 @@ function toLegacyScan(d) {
   return { height: d.height, weight: d.weight, bodyFat: d.bf, visceral: d.visceral, waist: d.waist, hips: d.hip, bmi: d.bmi, smm: d.muscle };
 }
 
+/* future: his phase is not here yet. open: this is his phase, so he can
+   enter or edit it. locked: he has moved on and it is saved. missed: he
+   moved on without saving one. */
 function scanState(n) {
-  const saved = (state.scans || {})[n];
-  if (saved) return "saved";
-  return n <= (Number(state.phase) || 1) ? "open" : "locked";
+  const phase = Number(state.phase) || 1;
+  if (n > phase) return "future";
+  if (n === phase) return "open";
+  return (state.scans || {})[n] ? "locked" : "missed";
 }
 
 function latestScan() {
@@ -421,8 +426,10 @@ function scanProfile() {
   const cards = Array.from({ length: SCAN_COUNT }, (_, i) => {
     const n = i + 1;
     const st = scanState(n);
-    const label = `<b>Scan ${n}</b><small>Phase ${n}</small><em>${st === "saved" ? "Saved" : st === "open" ? "Open" : "Locked"}</em>`;
-    return st === "locked"
+    const has = !!(state.scans || {})[n];
+    const status = { future: "Not open yet", open: has ? "Saved &middot; edit" : "Open", locked: "Locked", missed: "Not taken" }[st];
+    const label = `<b>Scan ${n}</b><small>Phase ${n}</small><em>${status}</em>`;
+    return st === "future" || st === "missed"
       ? `<div class="scan-card locked" aria-disabled="true">${label}</div>`
       : `<a class="scan-card${st === "open" ? " is-open" : ""}" href="#/app/scan/${n}">${label}</a>`;
   }).join("");
@@ -432,7 +439,7 @@ function scanProfile() {
       const m = state.scans[n].data;
       return `
       <div class="card">
-        <div class="split"><strong>SCAN ${n} &middot; PHASE ${n}</strong><span class="badge">LOCKED</span></div>
+        <div class="split"><strong>SCAN ${n} &middot; PHASE ${n}</strong><span class="badge">${scanState(n) === "open" ? "EDITABLE IN PHASE " + n : "LOCKED"}</span></div>
         <div class="metrics">${SCAN_SUMMARY.map((k) => metric(m, k)).join("")}</div>
         <a class="linkish" href="#/app/scan/${n}" style="display:block;margin-top:10px">See all twelve numbers &rsaquo;</a>
       </div>`;
@@ -451,7 +458,7 @@ function scanProfile() {
     </div>
     <p class="fine" style="text-align:center">${last ? `Scan ${last.n} &middot; Phase ${last.n} &middot; ${d.bf != null ? escapeHtml(String(d.bf)) + "% body fat" : "no body fat saved"}` : "No scan saved yet. Open Scan 1."}</p>
     <div class="scan-cards">${cards}</div>
-    ${panels || `<div class="card"><p class="fine" style="margin:0;text-align:center">No scan locked into your profile yet.</p></div>`}
+    ${panels || `<div class="card"><p class="fine" style="margin:0;text-align:center">No scan saved in your profile yet.</p></div>`}
     <div class="teaching">
       Same height. Same weight. Different engine.<br>
       The scan is the blueprint of your factory, not a score.<br>
@@ -466,25 +473,28 @@ function scanProfile() {
 
 function scanInput(n) {
   const st = scanState(n);
-  if (st === "locked") {
+  if (st === "future" || st === "missed") {
     return phone(`
       <a class="linkish phase-back" href="#/app/scan">&lsaquo; BODY SCAN</a>
       <p class="phase-tag">Scan ${n} &middot; Phase ${n}</p>
-      <h2 class="display">NOT OPEN YET.</h2>
-      <p class="lede">Scan ${n} opens when you reach Phase ${n}. Your earlier scans are on your profile.</p>
+      <h2 class="display">${st === "future" ? "NOT OPEN YET." : "NOT TAKEN."}</h2>
+      <p class="lede">${st === "future"
+        ? `Scan ${n} opens when you reach Phase ${n}. Your earlier scans are on your profile.`
+        : `No scan was saved during Phase ${n}, and it closed when you moved on. Your other scans are on your profile.`}</p>
       <a class="btn ghost" href="#/app/scan" style="margin-top:12px;display:block">BACK TO YOUR PROFILE</a>
     `, "home");
   }
-  const saved = st === "saved";
-  const d = saved ? state.scans[n].data : n === 1 ? fromLegacyScan(state.owned.scan ? state.scan : {}) : {};
+  const saved = st === "locked";
+  const entry = (state.scans || {})[n];
+  const d = entry ? entry.data : n === 1 ? fromLegacyScan(state.owned.scan ? state.scan : {}) : {};
   return phone(
     `
     <a class="linkish phase-back" href="#/app/scan">&lsaquo; BODY SCAN</a>
     <p class="phase-tag">Scan ${n} &middot; Phase ${n}</p>
-    <h2 class="display">${saved ? "YOUR SCAN, LOCKED." : "ENTER YOUR SCAN."}</h2>
+    <h2 class="display">${saved ? "YOUR SCAN, LOCKED." : entry ? "YOUR SCAN." : "ENTER YOUR SCAN."}</h2>
     <p class="lede">${saved
-      ? `Saved${state.scans[n].at ? " on " + new Date(state.scans[n].at).toLocaleDateString() : ""}. This scan is locked into your profile and cannot be changed.`
-      : `Phase ${n} body scan. Type the numbers off your Technogym report. Saving locks it into your profile.`}</p>
+      ? `Saved${entry.at ? " on " + new Date(entry.at).toLocaleDateString() : ""}. It locked when you moved on from Phase ${n}, so it stays your Phase ${n} record.`
+      : `Phase ${n} body scan. Type the numbers off your Technogym report. You can come back and fix them any time during Phase ${n}. It locks when you move on to Phase ${n + 1}.`}</p>
     ${saved ? "" : `
     <label class="upload-box">
       <input type="file" id="scan-file" accept=".pdf,.png,.jpg,.jpeg,.webp" />
@@ -501,7 +511,7 @@ function scanInput(n) {
     </div>
     ${saved
       ? `<button class="btn" disabled style="margin-top:14px">LOCKED INTO YOUR PROFILE</button>`
-      : `<button class="btn" style="margin-top:14px" data-act="save-scan" data-scan-n="${n}">SAVE &amp; LOCK</button>
+      : `<button class="btn" style="margin-top:14px" data-act="save-scan" data-scan-n="${n}">${entry ? "SAVE CHANGES" : "SAVE MY SCAN"}</button>
     <p class="fine" id="scan-msg" role="status"></p>`}
     <p class="fine">Numbers follow the Technogym Checkup body composition report. Visceral fat is the key number for the factory. BMI is here because the machine prints it; the scales still live in the cupboard.</p>
     <a class="btn ghost" href="#/app/scan" style="margin-top:8px;display:block">BACK TO YOUR PROFILE</a>
@@ -1389,7 +1399,6 @@ function bind() {
         if (msg) msg.textContent = "Enter at least your body fat % or your visceral fat.";
         return;
       }
-      if (!window.confirm(`Lock Scan ${n} into your profile? Check the numbers first. Once saved it cannot be changed.`)) return;
       const scans = { ...state.scans, [n]: { at: Date.now(), data } };
       const next = { scans, scan: { ...state.scan, ...toLegacyScan(data) } };
       if (n === 1) {
