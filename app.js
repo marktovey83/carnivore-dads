@@ -84,6 +84,11 @@ function load() {
   }
 }
 let state = load();
+if (!state.scans) {
+  state.scans = state.owned && state.owned.scan
+    ? { 1: { at: null, data: fromLegacyScan(state.scan || {}) } }
+    : {};
+}
 function save(next) {
   state = { ...state, ...next };
   localStorage.setItem(KEY, JSON.stringify(state));
@@ -301,7 +306,7 @@ function myBody(phase) {
     <div class="card">
       <p class="field" style="margin-top:0">Your scan</p>
       <p class="lede" style="margin:0">Your results exactly as the machine printed them. Reading a scan file automatically is not connected, so enter the numbers.</p>
-      <a class="btn ghost" href="#/app/scan" style="margin-top:12px;display:block">ENTER A SCAN</a>
+      <a class="btn ghost" href="#/app/scan" style="margin-top:12px;display:block">OPEN YOUR BODY SCANS</a>
       <a class="btn ghost" href="#/app/factory" style="margin-top:8px;display:block">OPEN YOUR FACTORY</a>
     </div>
     <div class="card">
@@ -353,36 +358,153 @@ function factory() {
   );
 }
 
-function scan() {
-  const fields = [
-    ["height", "Height", "cm"],
-    ["waist", "Waist circumference", "cm"],
-    ["hips", "Hip circumference", "cm"],
-    ["weight", "Weight", "kg"],
-    ["bmi", "BMI", ""],
-    ["bodyFat", "Body fat %", "%"],
-    ["smm", "Skeletal muscle mass (SMM)", "kg"],
-    ["visceral", "Visceral fat", "level"],
-  ];
+/* Body scans: one per phase for the first three phases. Each opens when
+   his phase does, and once saved it is locked into his profile so the
+   before-and-after stays honest. Fields follow the Technogym Checkup
+   body composition report. */
+const SCAN_COUNT = 3;
+const SCAN_FIELDS = [
+  ["height", "Height", "cm", "0.1"],
+  ["weight", "Weight", "kg", "0.1"],
+  ["bf", "Body fat", "%", "0.1"],
+  ["visceral", "Visceral fat", "level", "0.1"],
+  ["fatMass", "Fat mass", "kg", "0.1"],
+  ["muscle", "Muscle / lean mass", "kg", "0.1"],
+  ["bone", "Bone mineral", "kg", "0.01"],
+  ["water", "Body water", "%", "0.1"],
+  ["phaseAngle", "Phase angle", "°", "0.1"],
+  ["waist", "Waist", "cm", "0.1"],
+  ["hip", "Hip", "cm", "0.1"],
+  ["bmi", "BMI", "", "0.1"],
+];
+/* The eight that show on the profile, visceral first because it is the one
+   the factory is built around. */
+const SCAN_SUMMARY = ["visceral", "bf", "weight", "height", "muscle", "fatMass", "waist", "phaseAngle"];
+
+function fromLegacyScan(o) {
+  const map = { height: "height", weight: "weight", bodyFat: "bf", visceral: "visceral", waist: "waist", hips: "hip", bmi: "bmi", smm: "muscle" };
+  const d = {};
+  Object.entries(map).forEach(([from, to]) => {
+    const n = parseFloat(o[from]);
+    if (!Number.isNaN(n)) d[to] = n;
+  });
+  return d;
+}
+
+function toLegacyScan(d) {
+  return { height: d.height, weight: d.weight, bodyFat: d.bf, visceral: d.visceral, waist: d.waist, hips: d.hip, bmi: d.bmi, smm: d.muscle };
+}
+
+function scanState(n) {
+  const saved = (state.scans || {})[n];
+  if (saved) return "saved";
+  return n <= (Number(state.phase) || 1) ? "open" : "locked";
+}
+
+function latestScan() {
+  for (let n = SCAN_COUNT; n >= 1; n--) if ((state.scans || {})[n]) return { n, ...(state.scans[n]) };
+  return null;
+}
+
+function metric(d, k) {
+  const f = SCAN_FIELDS.find((x) => x[0] === k);
+  const v = d[k];
+  const shown = v === undefined || v === null || v === "" ? "&mdash;" : `${escapeHtml(String(v))}${f[2] && f[2] !== "level" ? (f[2] === "%" || f[2] === "°" ? f[2] : " " + f[2]) : ""}`;
+  return `<div class="metric${k === "visceral" ? " key" : ""}"><b>${shown}</b><span>${f[1]}${k === "visceral" ? " (key)" : ""}</span></div>`;
+}
+
+function scanProfile() {
+  const last = latestScan();
+  const d = last ? last.data : null;
+  const fat = d && d.bf ? Number(d.bf) : 25;
+  const vis = d && d.visceral ? Number(d.visceral) : 10;
+  const cards = Array.from({ length: SCAN_COUNT }, (_, i) => {
+    const n = i + 1;
+    const st = scanState(n);
+    const label = `<b>Scan ${n}</b><small>Phase ${n}</small><em>${st === "saved" ? "Saved" : st === "open" ? "Open" : "Locked"}</em>`;
+    return st === "locked"
+      ? `<div class="scan-card locked" aria-disabled="true">${label}</div>`
+      : `<a class="scan-card${st === "open" ? " is-open" : ""}" href="#/app/scan/${n}">${label}</a>`;
+  }).join("");
+  const panels = Array.from({ length: SCAN_COUNT }, (_, i) => SCAN_COUNT - i)
+    .filter((n) => (state.scans || {})[n])
+    .map((n) => {
+      const m = state.scans[n].data;
+      return `
+      <div class="card">
+        <div class="split"><strong>SCAN ${n} &middot; PHASE ${n}</strong><span class="badge">LOCKED</span></div>
+        <div class="metrics">${SCAN_SUMMARY.map((k) => metric(m, k)).join("")}</div>
+        <a class="linkish" href="#/app/scan/${n}" style="display:block;margin-top:10px">See all twelve numbers &rsaquo;</a>
+      </div>`;
+    }).join("");
   return phone(
     `
-    <p class="phase-tag">Phase 1 · Kit</p>
-    <h2 class="display">YOUR SCAN NUMBERS.</h2>
-    <p class="lede">Photograph every screen the machine gives you and we will read the numbers off it. Or type them in yourself.</p>
-    <div class="row-btns"><button class="btn ghost">TAKE PHOTO</button><button class="btn ghost">UPLOAD</button></div>
-    ${fields
-      .map(
-        ([k, label, unit]) => `
-      <div class="kit-row">
-        <div class="cd-plate" style="width:36px;height:24px"><span style="font-size:13px">CD</span></div>
-        <div><label class="field" style="margin-top:0">${label}</label><input data-scan="${k}" value="${escapeAttr(state.scan[k] || "")}" /></div>
-        <span class="fine">${unit}</span>
-      </div>`
-      )
-      .join("")}
-    <p class="fine">BMI is on the page because the machine prints it. The program still tells you to put the scales in the cupboard.</p>
-    <button class="btn" style="margin-top:16px" data-act="save-scan">SAVE MY SCAN</button>
-    <a class="btn ghost" href="#/app/factory" style="margin-top:8px;display:block">SEE THE FACTORY</a>
+    <p class="phase-tag">Your factory profile</p>
+    <h2 class="display">BODY SCAN.</h2>
+    <div class="body-stage">
+      <div class="sil" style="transform:scale(${1 + (fat - 15) / 80})">
+        <div class="arm l"></div><div class="arm r"></div>
+        <div class="head"></div>
+        <div class="torso"><div class="gut" style="opacity:${0.25 + vis / 30};height:${28 + vis * 1.4}%"></div></div>
+        <div class="legs"><div class="leg"></div><div class="leg"></div></div>
+      </div>
+    </div>
+    <p class="fine" style="text-align:center">${last ? `Scan ${last.n} &middot; Phase ${last.n} &middot; ${d.bf != null ? escapeHtml(String(d.bf)) + "% body fat" : "no body fat saved"}` : "No scan saved yet. Open Scan 1."}</p>
+    <div class="scan-cards">${cards}</div>
+    ${panels || `<div class="card"><p class="fine" style="margin:0;text-align:center">No scan locked into your profile yet.</p></div>`}
+    <div class="teaching">
+      Same height. Same weight. Different engine.<br>
+      The scan is the blueprint of your factory, not a score.<br>
+      Visceral fat is the key number. Inside first.
+    </div>
+    <a class="btn ghost" href="#/app/factory" style="margin-top:16px;display:block">SEE THE FACTORY</a>
+    ${legal()}
+  `,
+    "home"
+  );
+}
+
+function scanInput(n) {
+  const st = scanState(n);
+  if (st === "locked") {
+    return phone(`
+      <a class="linkish phase-back" href="#/app/scan">&lsaquo; BODY SCAN</a>
+      <p class="phase-tag">Scan ${n} &middot; Phase ${n}</p>
+      <h2 class="display">NOT OPEN YET.</h2>
+      <p class="lede">Scan ${n} opens when you reach Phase ${n}. Your earlier scans are on your profile.</p>
+      <a class="btn ghost" href="#/app/scan" style="margin-top:12px;display:block">BACK TO YOUR PROFILE</a>
+    `, "home");
+  }
+  const saved = st === "saved";
+  const d = saved ? state.scans[n].data : n === 1 ? fromLegacyScan(state.owned.scan ? state.scan : {}) : {};
+  return phone(
+    `
+    <a class="linkish phase-back" href="#/app/scan">&lsaquo; BODY SCAN</a>
+    <p class="phase-tag">Scan ${n} &middot; Phase ${n}</p>
+    <h2 class="display">${saved ? "YOUR SCAN, LOCKED." : "ENTER YOUR SCAN."}</h2>
+    <p class="lede">${saved
+      ? `Saved${state.scans[n].at ? " on " + new Date(state.scans[n].at).toLocaleDateString() : ""}. This scan is locked into your profile and cannot be changed.`
+      : `Phase ${n} body scan. Type the numbers off your Technogym report. Saving locks it into your profile.`}</p>
+    ${saved ? "" : `
+    <label class="upload-box">
+      <input type="file" id="scan-file" accept=".pdf,.png,.jpg,.jpeg,.webp" />
+      <b>Upload your scan report (PDF or photo)</b>
+      <span class="fine">Reading the report for you is coming. For now, type the numbers below.</span>
+    </label>
+    <p class="fine" id="scan-file-msg" role="status"></p>`}
+    <div class="scan-grid">
+      ${SCAN_FIELDS.map(([k, label, unit, step]) => `
+        <div>
+          <label class="field${k === "visceral" ? " key-label" : ""}" for="scan-${k}">${label}${unit ? ` (${unit})` : ""}</label>
+          <input id="scan-${k}" data-scan="${k}" type="number" inputmode="decimal" step="${step}" value="${d[k] != null ? escapeAttr(String(d[k])) : ""}" ${saved ? "readonly" : ""} ${k === "visceral" ? 'placeholder="from scan"' : ""} />
+        </div>`).join("")}
+    </div>
+    ${saved
+      ? `<button class="btn" disabled style="margin-top:14px">LOCKED INTO YOUR PROFILE</button>`
+      : `<button class="btn" style="margin-top:14px" data-act="save-scan" data-scan-n="${n}">SAVE &amp; LOCK</button>
+    <p class="fine" id="scan-msg" role="status"></p>`}
+    <p class="fine">Numbers follow the Technogym Checkup body composition report. Visceral fat is the key number for the factory. BMI is here because the machine prints it; the scales still live in the cupboard.</p>
+    <a class="btn ghost" href="#/app/scan" style="margin-top:8px;display:block">BACK TO YOUR PROFILE</a>
   `,
     "home"
   );
@@ -434,7 +556,7 @@ function bodyScan() {
       <li><strong>EDUCATION, NOT VANITY</strong>Learn the factory. Then run it.</li>
     </ul>
     <button class="btn" data-watch="scan">WATCHED IT &mdash; UNLOCK THE BOX</button>
-    <a class="btn ghost" href="#/app/scan" style="margin-top:8px;display:block">ENTER MY SCAN</a>
+    <a class="btn ghost" href="#/app/scan/1" style="margin-top:8px;display:block">ENTER MY SCAN</a>
     <a class="btn ghost" href="#/app/my-body/1" style="margin-top:8px;display:block">BACK TO THE KIT</a>
     ${legal()}
   `,
@@ -1154,7 +1276,9 @@ function route() {
   const les = hash.match(/^\/app\/lesson\/(\d)\/([a-z-]+)$/);
   if (les) return lesson(Number(les[1]), les[2]);
   if (hash === "/app/factory") return factory();
-  if (hash === "/app/scan") return scan();
+  if (hash === "/app/scan") return scanProfile();
+  const scanN = hash.match(/^\/app\/scan\/(\d)$/);
+  if (scanN && Number(scanN[1]) >= 1 && Number(scanN[1]) <= SCAN_COUNT) return scanInput(Number(scanN[1]));
   if (hash.startsWith("/app/kit/")) return kitLesson(hash.slice("/app/kit/".length));
   if (hash === "/app/shop") return shop();
   if (hash === "/app/account") return account();
@@ -1191,6 +1315,14 @@ function bind() {
       note.hidden = false;
     };
   });
+  // Reading a report automatically is not connected yet, so a chosen file
+  // gets an honest answer instead of numbers that were never on it.
+  const scanFile = document.getElementById("scan-file");
+  if (scanFile) scanFile.onchange = () => {
+    const f = scanFile.files && scanFile.files[0];
+    const msg = document.getElementById("scan-file-msg");
+    if (f && msg) msg.textContent = `Got ${f.name}. Reading reports automatically is not switched on yet, so type the numbers from it below.`;
+  };
   const countrySelect = document.getElementById("country");
   if (countrySelect) countrySelect.onchange = () => save({ country: countrySelect.value });
   document.querySelectorAll("[data-watch]").forEach((btn) => {
@@ -1245,12 +1377,27 @@ function bind() {
       });
     }
     if (kind === "save-scan") {
-      const scan = { ...state.scan };
+      const n = Number(act.getAttribute("data-scan-n")) || 1;
+      if (scanState(n) !== "open") return;
+      const data = {};
       document.querySelectorAll("[data-scan]").forEach((el) => {
-        scan[el.getAttribute("data-scan")] = el.value;
+        const v = parseFloat(String(el.value).replace(",", "."));
+        if (!Number.isNaN(v)) data[el.getAttribute("data-scan")] = v;
       });
-      save({ scan, watched: { ...state.watched, scan: true }, owned: { ...state.owned, scan: true } });
-      location.hash = "#/app/factory";
+      const msg = document.getElementById("scan-msg");
+      if (data.bf == null && data.visceral == null) {
+        if (msg) msg.textContent = "Enter at least your body fat % or your visceral fat.";
+        return;
+      }
+      if (!window.confirm(`Lock Scan ${n} into your profile? Check the numbers first. Once saved it cannot be changed.`)) return;
+      const scans = { ...state.scans, [n]: { at: Date.now(), data } };
+      const next = { scans, scan: { ...state.scan, ...toLegacyScan(data) } };
+      if (n === 1) {
+        next.watched = { ...state.watched, scan: true };
+        next.owned = { ...state.owned, scan: true };
+      }
+      location.hash = "#/app/scan";
+      save(next);
     }
     if (kind === "log-ketone") {
       const mmol = parseMmol(val("mmol"));

@@ -520,3 +520,37 @@ a.gate-row:hover { color: var(--ember); }
 .badge.dim { border-color: #4a463d; color: var(--muted); }
 a.lesson-row { color: var(--bone); }
 a.lesson-row:hover { color: var(--ember); }
+
+/* Body scan profile and input, after the Scan Input / Factory Profile
+   layout: three scan cards, a locked panel per saved scan, visceral picked
+   out in ember because it is the number the factory is built around. */
+.scan-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0 6px; }
+.scan-card {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: var(--plate); border: 1px solid var(--line);
+  padding: 12px 6px; text-align: center; color: var(--bone);
+}
+.scan-card b { color: var(--ember); font-family: Anton, sans-serif; font-weight: 400; font-size: 18px; letter-spacing: 0.04em; }
+.scan-card small { font-size: 12px; }
+.scan-card em { font-style: normal; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.scan-card.is-open { border-color: var(--ember); }
+.scan-card.is-open em { color: var(--ember); }
+a.scan-card:hover { border-color: var(--ember-hot); color: var(--bone); }
+.scan-card.locked { opacity: 0.6; }
+.metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.metric { background: #1b1b1b; padding: 10px; border: 1px solid transparent; }
+.metric b { display: block; font-family: Anton, sans-serif; font-weight: 400; font-size: 20px; color: var(--ember); }
+.metric span { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #8a8374; }
+.metric.key { border-color: var(--ember); }
+.teaching { margin-top: 14px; padding-left: 12px; border-left: 3px solid var(--ember); font-size: 14px; line-height: 1.5; color: #cfc8b8; }
+.upload-box {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  border: 1.5px dashed #555; background: #1a1a1a;
+  padding: 18px; margin: 14px 0 4px; text-align: center; cursor: pointer;
+}
+.upload-box:hover { border-color: var(--ember); }
+.upload-box input { display: none; }
+.scan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+.scan-grid .field { margin-top: 10px; }
+.scan-grid input[readonly] { opacity: 0.8; }
+.key-label { color: var(--ember); }
