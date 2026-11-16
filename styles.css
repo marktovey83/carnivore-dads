@@ -574,3 +574,24 @@ a.scan-card:hover { border-color: var(--ember-hot); color: var(--bone); }
 .swatches { display: flex; gap: 10px; }
 .swatch { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
 .swatch.on { border-color: var(--ember); box-shadow: 0 0 0 2px #141414 inset; }
+
+/* Tabs across the top of My body: phase, scans, factory, bloods. */
+.body-nav {
+  display: flex; gap: 0; margin: 4px -2px 14px;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto; scrollbar-width: none;
+}
+.body-nav::-webkit-scrollbar { display: none; }
+.body-nav a {
+  flex: 1 0 auto; text-align: center; white-space: nowrap;
+  padding: 10px 10px 9px; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #8a8374; border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.body-nav a.on { color: var(--ember); border-bottom-color: var(--ember); }
+.body-nav a:hover { color: var(--bone); }
+
+/* Scan reader: the consent box, the busy state, and numbers that came off
+   the report until he types over them. */
+.upload-box.consent { cursor: default; }
+.upload-box.busy { opacity: 0.6; pointer-events: none; }
+.scan-grid input.from-report { border-color: var(--ember); }

@@ -1,0 +1,18 @@
+# Carnivore Dads server on Cloudflare Workers.
+# The Anthropic key is a secret, never in this file:
+#   npx wrangler secret put ANTHROPIC_API_KEY
+name = "carnivore-dads-server"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[vars]
+# The sites allowed to call the server: the live app, and local testing.
+ALLOWED_ORIGINS = "https://marktovey83.github.io,http://localhost:5173,http://localhost:8123"
+
+# At most 6 report reads a minute from one connection.
+[[ratelimits]]
+name = "SCAN_LIMIT"
+namespace_id = "1001"
+  [ratelimits.simple]
+  limit = 6
+  period = 60
