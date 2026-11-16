@@ -144,6 +144,22 @@ function tabs(active) {
     </a>`).join("")}</nav>`;
 }
 
+/* Tabs across the top of every My body page, so his phase, scans, factory
+   and bloods are one tap from each other. */
+function bodyNav() {
+  const cur = Math.min(5, Math.max(1, Number(state.phase) || 1));
+  const h = location.hash.replace(/^#/, "");
+  const items = [
+    ["My phase", `#/app/my-body/${cur}`, /^\/app\/my-body/],
+    ["Body scan", "#/app/scan", /^\/app\/scan/],
+    ["Factory", "#/app/factory", /^\/app\/factory/],
+    ["Bloods", "#/app/bloods", /^\/app\/bloods/],
+  ];
+  return `<nav class="body-nav" aria-label="My body">${items
+    .map(([label, href, re]) => `<a href="${href}"${re.test(h) ? ' class="on" aria-current="page"' : ""}>${label}</a>`)
+    .join("")}</nav>`;
+}
+
 function phone(inner, tab) {
   return `
     <div class="desk">
@@ -151,6 +167,7 @@ function phone(inner, tab) {
       <div class="phone">
         <div class="screen ${tab ? "with-tabs" : ""}">
           <a href="#/app/my-body">${lockup(!!tab)}</a>
+          ${tab === "home" ? bodyNav() : ""}
           ${inner}
         </div>
         ${tab ? tabs(tab) : ""}
@@ -364,6 +381,12 @@ function factory() {
    stays honest. Fields follow the Technogym Checkup
    body composition report. */
 const SCAN_COUNT = 3;
+
+/* The scan reader on the Carnivore Dads server (server/ in this repo). Empty
+   until the server is deployed: the upload box then says reading is not
+   switched on, and he types the numbers. Set it to the deployed address,
+   e.g. "https://carnivore-dads-server.<account>.workers.dev/scan/read". */
+const SCAN_API = "";
 const SCAN_FIELDS = [
   ["height", "Height", "cm", "0.1"],
   ["weight", "Weight", "kg", "0.1"],
@@ -557,6 +580,102 @@ function scanProfile() {
   );
 }
 
+/* The upload box. Before his first report it asks his say-so, because the
+   file leaves the phone to be read. */
+/* Bloods: where his blood results will live. Reading them is the next AI
+   step in docs/ai-plan.md, so for now the page says what is coming. */
+function bloods() {
+  return phone(`
+    <p class="phase-tag">Your factory profile</p>
+    <h2 class="display">BLOODS.</h2>
+    <p class="lede">Your blood results, kept next to your scans. Optional: share them if you want them here.</p>
+    <div class="lesson-pending"><p class="etk">BEING BUILT</p><p>Soon you can upload your blood test and see each marker, your number, your lab's range, and what it means for the factory. Anything outside the range will say: worth showing your GP.</p></div>
+    <p class="field">What it will show</p>
+    <ul class="points">
+      <li><strong>FUEL</strong>Blood sugar and the longer-term sugar reading (HbA1c).</li>
+      <li><strong>FATS IN THE PIPES</strong>Cholesterol and triglycerides.</li>
+      <li><strong>THE LIVER</strong>The liver enzymes your lab measures.</li>
+      <li><strong>THE KIDNEYS</strong>How well the filters are clearing.</li>
+      <li><strong>INFLAMMATION</strong>The fire markers, if your GP ordered them.</li>
+    </ul>
+    <p class="fine">Education only. Your GP reads your bloods and owns your medicine.</p>
+    <a class="btn ghost" href="#/app/scan" style="margin-top:12px;display:block">BACK TO YOUR BODY SCANS</a>
+    ${legal()}
+  `, "home");
+}
+
+function scanUpload() {
+  if (!SCAN_API) {
+    return `
+    <label class="upload-box">
+      <input type="file" id="scan-file" accept=".pdf,.png,.jpg,.jpeg,.webp" />
+      <b>Upload your scan report (PDF or photo)</b>
+      <span class="fine">Reading the report for you is coming. For now, type the numbers below.</span>
+    </label>`;
+  }
+  if (!(state.consent || {}).scanReader) {
+    return `
+    <div class="upload-box consent">
+      <b>Let us read your report for you?</b>
+      <span class="fine">Your report is sent to the Carnivore Dads server and to Claude, an AI made by Anthropic, which reads the numbers off it. The numbers come back to this phone. The report is not kept. You check every number before you save.</span>
+      <button class="btn small" data-act="consent-scan" style="margin-top:10px">YES, READ MY REPORTS</button>
+      <span class="fine">Or skip this and type the numbers below.</span>
+    </div>`;
+  }
+  return `
+    <label class="upload-box">
+      <input type="file" id="scan-file" accept=".pdf,.png,.jpg,.jpeg,.webp" />
+      <b>Upload your scan report (PDF or photo)</b>
+      <span class="fine">We read the numbers off it and fill the boxes. You check them before you save.</span>
+    </label>`;
+}
+
+async function readScanReport(file) {
+  const msg = document.getElementById("scan-file-msg");
+  const box = document.querySelector(".upload-box");
+  const say = (t) => { if (msg) msg.textContent = t; };
+  if (!SCAN_API) {
+    say(`Got ${file.name}. Reading reports automatically is not switched on yet, so type the numbers from it below.`);
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    say("That file is over 10 MB. Try a photo of the page instead.");
+    return;
+  }
+  say("Reading your report. This takes a few seconds.");
+  if (box) box.classList.add("busy");
+  try {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(SCAN_API, { method: "POST", body: form });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      say(body.message || "The report could not be read. Type the numbers for now.");
+      return;
+    }
+    const label = (k) => (SCAN_FIELDS.find((f) => f[0] === k) || [k, k])[1];
+    let filled = 0;
+    Object.entries(body.fields || {}).forEach(([k, v]) => {
+      const el = document.getElementById("scan-" + k);
+      if (!el) return;
+      el.value = String(v);
+      el.classList.add("from-report");
+      filled++;
+    });
+    const parts = [filled
+      ? `Filled ${filled} of ${SCAN_FIELDS.length} numbers from your report. Check every one against the report before you save.`
+      : "No numbers could be read off that report. Type them below."];
+    if ((body.converted || []).length) parts.push(`Changed to cm or kg: ${body.converted.map(label).join(", ")}.`);
+    if ((body.rejected || []).length) parts.push(`These did not look right, so type them yourself: ${body.rejected.map(label).join(", ")}.`);
+    if (filled && (body.missing || []).length) parts.push(`Not on the report: ${body.missing.map(label).join(", ")}.`);
+    say(parts.join(" "));
+  } catch {
+    say("No connection to the reader. Type the numbers for now, or try again with signal.");
+  } finally {
+    if (box) box.classList.remove("busy");
+  }
+}
+
 function scanInput(n) {
   const st = scanState(n);
   if (st === "future" || st === "missed") {
@@ -582,11 +701,7 @@ function scanInput(n) {
       ? `Saved${entry.at ? " on " + new Date(entry.at).toLocaleDateString() : ""}. It locked when you moved on from Phase ${n}, so it stays your Phase ${n} record.`
       : `Phase ${n} body scan. Type the numbers off your Technogym report. You can come back and fix them any time during Phase ${n}. It locks when you move on to Phase ${n + 1}.`}</p>
     ${saved ? "" : `
-    <label class="upload-box">
-      <input type="file" id="scan-file" accept=".pdf,.png,.jpg,.jpeg,.webp" />
-      <b>Upload your scan report (PDF or photo)</b>
-      <span class="fine">Reading the report for you is coming. For now, type the numbers below.</span>
-    </label>
+    ${scanUpload()}
     <p class="fine" id="scan-file-msg" role="status"></p>`}
     <div class="scan-grid">
       ${SCAN_FIELDS.map(([k, label, unit, step]) => `
@@ -1373,6 +1488,7 @@ function route() {
   if (les) return lesson(Number(les[1]), les[2]);
   if (hash === "/app/factory") return factory();
   if (hash === "/app/scan") return scanProfile();
+  if (hash === "/app/bloods") return bloods();
   const scanN = hash.match(/^\/app\/scan\/(\d)$/);
   if (scanN && Number(scanN[1]) >= 1 && Number(scanN[1]) <= SCAN_COUNT) return scanInput(Number(scanN[1]));
   if (hash.startsWith("/app/kit/")) return kitLesson(hash.slice("/app/kit/".length));
@@ -1422,9 +1538,13 @@ function bind() {
   const scanFile = document.getElementById("scan-file");
   if (scanFile) scanFile.onchange = () => {
     const f = scanFile.files && scanFile.files[0];
-    const msg = document.getElementById("scan-file-msg");
-    if (f && msg) msg.textContent = `Got ${f.name}. Reading reports automatically is not switched on yet, so type the numbers from it below.`;
+    if (f) readScanReport(f);
+    scanFile.value = "";
   };
+  // A number he types over is his, not the report's.
+  document.querySelectorAll("[data-scan]").forEach((el) => {
+    el.addEventListener("input", () => el.classList.remove("from-report"));
+  });
   const countrySelect = document.getElementById("country");
   if (countrySelect) countrySelect.onchange = () => save({ country: countrySelect.value });
   document.querySelectorAll("[data-watch]").forEach((btn) => {
@@ -1457,6 +1577,9 @@ function bind() {
   document.querySelectorAll("[data-act]").forEach((act) => {
     act.onclick = () => {
     const kind = act.getAttribute("data-act");
+    if (kind === "consent-scan") {
+      save({ consent: { ...(state.consent || {}), scanReader: Date.now() } });
+    }
     if (kind === "start") {
       save({
         occupation: val("occupation"),
