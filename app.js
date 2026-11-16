@@ -418,6 +418,98 @@ function metric(d, k) {
   return `<div class="metric${k === "visceral" ? " key" : ""}"><b>${shown}</b><span>${f[1]}${k === "visceral" ? " (key)" : ""}</span></div>`;
 }
 
+/* The body picture. The real one will be made by an image service from his
+   scan numbers and the looks he picks (docs/ai-plan.md). Until that is
+   connected this draws a stand-in from the same numbers, marked SAMPLE, so
+   the layout and the scan-to-scan change can be seen. */
+const LOOKS = {
+  age: ["30s", "40s", "50s", "60s"],
+  skin: [["Light", "#e6c3a5"], ["Fair", "#d4a77f"], ["Olive", "#b98a5e"], ["Brown", "#8d5a3b"], ["Dark", "#5c3a26"]],
+  hair: ["Short", "Shaved", "Thinning", "Grey"],
+};
+
+function looks() {
+  return { age: "40s", skin: "Olive", hair: "Short", ...(state.looks || {}) };
+}
+
+function bodyFigure(d, opts = {}) {
+  const bf = Math.min(40, Math.max(8, Number(d.bf) || 25));
+  const vis = Math.min(25, Math.max(1, Number(d.visceral) || 10));
+  const mus = Math.min(80, Math.max(45, Number(d.muscle) || 62));
+  const L = looks();
+  const skin = (LOOKS.skin.find((x) => x[0] === L.skin) || LOOKS.skin[2])[1];
+  const sh = 44 + (mus - 55) * 0.35; // half shoulder width
+  const ch = sh - 4; // chest
+  const wa = 24 + bf * 0.42 + vis * 0.45; // waist
+  const hi = 30 + bf * 0.28; // hips
+  const belly = vis * 1.1 + bf * 0.3;
+  const thigh = 15 + bf * 0.18;
+  const arm = 9 + (mus - 55) * 0.12 + bf * 0.06;
+  const hair = L.hair === "Shaved" ? "none" : L.hair === "Grey" ? "#9a958c" : "#2b2119";
+  const hairPath = L.hair === "Thinning" ? "M84,30 Q100,18 116,30 Q112,24 100,23 Q88,24 84,30Z" : "M81,36 Q82,14 100,14 Q118,14 119,36 Q114,24 100,24 Q86,24 81,36Z";
+  const id = opts.id || "b";
+  return `<svg viewBox="0 0 200 420" class="body-svg" role="img" aria-label="Body picture">
+    <defs>
+      <linearGradient id="${id}s" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".38"/><stop offset=".3" stop-color="#000" stop-opacity="0"/><stop offset=".7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".42"/></linearGradient>
+      <filter id="${id}f" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+    </defs>
+    <ellipse cx="100" cy="408" rx="${hi + 18}" ry="6" fill="#000" opacity=".5"/>
+    <g fill="${skin}">
+      <path d="M${100 - sh},82 Q${100 - sh - arm},${100} ${100 - sh - arm + 2},150 L${100 - sh - arm + 6},232 Q${100 - sh - 4},242 ${100 - sh + 2},232 L${100 - sh + arm - 2},150 Q${100 - sh + 6},120 ${100 - sh + 10},96Z"/>
+      <path d="M${100 + sh},82 Q${100 + sh + arm},${100} ${100 + sh + arm - 2},150 L${100 + sh + arm - 6},232 Q${100 + sh + 4},242 ${100 + sh - 2},232 L${100 + sh - arm + 2},150 Q${100 + sh - 6},120 ${100 + sh - 10},96Z"/>
+      <rect x="91" y="56" width="18" height="22" rx="6"/>
+      <path d="M${100 - sh},80 Q100,66 ${100 + sh},80 L${100 + ch},120 Q${100 + wa + belly * 0.35},178 ${100 + wa},200 L${100 + hi},222 L${100 - hi},222 L${100 - wa},200 Q${100 - wa - belly * 0.35},178 ${100 - ch},120Z"/>
+      <path d="M${100 - hi + 2},280 L${100 - thigh - 6},392 Q${100 - thigh},402 ${100 - 6},392 L98,282Z"/>
+      <path d="M${100 + hi - 2},280 L${100 + thigh + 6},392 Q${100 + thigh},402 ${100 + 6},392 L102,282Z"/>
+      <ellipse cx="100" cy="38" rx="18" ry="23"/>
+    </g>
+    <path d="M${100 - sh},80 Q100,66 ${100 + sh},80 L${100 + ch},120 Q${100 + wa + belly * 0.35},178 ${100 + wa},200 L${100 + hi},222 L${100 - hi},222 L${100 - wa},200 Q${100 - wa - belly * 0.35},178 ${100 - ch},120Z" fill="url(#${id}s)"/>
+    <ellipse cx="100" cy="${172 + belly * 0.3}" rx="${wa * 0.78}" ry="${10 + belly * 0.9}" fill="#000" opacity="${0.06 + vis * 0.008}" filter="url(#${id}f)"/>
+    <path d="M${100 - ch + 8},112 Q${100 - 14},${124 + bf * 0.15} 98,112 M102,112 Q${100 + 14},${124 + bf * 0.15} ${100 + ch - 8},112" stroke="#000" stroke-opacity=".18" stroke-width="2" fill="none"/>
+    <path d="M${100 - hi - 2},214 L${100 + hi + 2},214 L${100 + hi + 4},284 L101,284 L100,262 L99,284 L${100 - hi - 4},284Z" fill="#1f1f1f"/>
+    <rect x="${100 - hi - 2}" y="214" width="${(hi + 2) * 2}" height="7" fill="#c9963a"/>
+    ${hair === "none" ? "" : `<path d="${hairPath}" fill="${hair}"/>`}
+    <path d="M92,48 Q100,52 108,48" stroke="#000" stroke-opacity=".25" stroke-width="1.6" fill="none"/>
+  </svg>`;
+}
+
+function bodyPicture(last) {
+  const n = last ? last.n : 1;
+  const thumbs = Array.from({ length: SCAN_COUNT }, (_, i) => {
+    const k = i + 1;
+    const sc = (state.scans || {})[k];
+    return `<div class="body-thumb${sc ? "" : " empty"}${last && k === last.n ? " on" : ""}">
+      ${sc ? bodyFigure(sc.data, { id: "t" + k }) : '<span>&mdash;</span>'}
+      <small>Scan ${k}</small>
+    </div>`;
+  }).join("");
+  return `
+    <div class="body-frame">
+      <span class="body-tag">SAMPLE PICTURE</span>
+      ${bodyFigure(last ? last.data : {}, { id: "main" })}
+      <p class="body-caption">${last ? `Made from your Scan ${n} numbers.` : "Your picture is made from your Scan 1 numbers."} An illustration, not a photo.</p>
+    </div>
+    <div class="body-thumbs" aria-label="Your picture at each scan">${thumbs}</div>
+    <p class="fine" style="text-align:center">Same man at every scan. Scan 2 and 3 change your Scan 1 picture to the new numbers.</p>`;
+}
+
+function looksCard() {
+  const L = looks();
+  return `
+    <div class="card">
+      <strong>YOUR LOOKS</strong>
+      <p class="fine">The scan measures what is under the skin. It cannot tell us these, so pick them once.</p>
+      <label class="field" for="look-age">Age</label>
+      <select id="look-age" data-look="age">${LOOKS.age.map((a) => `<option ${a === L.age ? "selected" : ""}>${a}</option>`).join("")}</select>
+      <p class="field">Skin tone</p>
+      <div class="swatches">${LOOKS.skin.map(([name, hex]) => `<button class="swatch${name === L.skin ? " on" : ""}" style="background:${hex}" data-look-skin="${name}" aria-label="${name}" aria-pressed="${name === L.skin}"></button>`).join("")}</div>
+      <label class="field" for="look-hair">Hair</label>
+      <select id="look-hair" data-look="hair">${LOOKS.hair.map((h) => `<option ${h === L.hair ? "selected" : ""}>${h}</option>`).join("")}</select>
+      <button class="btn" disabled style="margin-top:14px">MAKE MY PICTURE &middot; COMING SOON</button>
+      <p class="fine">Your real picture will be drawn from your scan by an image service, once it is switched on. Until then this sample shows the layout.</p>
+    </div>`;
+}
+
 function scanProfile() {
   const last = latestScan();
   const d = last ? last.data : null;
@@ -448,17 +540,11 @@ function scanProfile() {
     `
     <p class="phase-tag">Your factory profile</p>
     <h2 class="display">BODY SCAN.</h2>
-    <div class="body-stage">
-      <div class="sil" style="transform:scale(${1 + (fat - 15) / 80})">
-        <div class="arm l"></div><div class="arm r"></div>
-        <div class="head"></div>
-        <div class="torso"><div class="gut" style="opacity:${0.25 + vis / 30};height:${28 + vis * 1.4}%"></div></div>
-        <div class="legs"><div class="leg"></div><div class="leg"></div></div>
-      </div>
-    </div>
+    ${bodyPicture(last)}
     <p class="fine" style="text-align:center">${last ? `Scan ${last.n} &middot; Phase ${last.n} &middot; ${d.bf != null ? escapeHtml(String(d.bf)) + "% body fat" : "no body fat saved"}` : "No scan saved yet. Open Scan 1."}</p>
     <div class="scan-cards">${cards}</div>
     ${panels || `<div class="card"><p class="fine" style="margin:0;text-align:center">No scan saved in your profile yet.</p></div>`}
+    ${looksCard()}
     <div class="teaching">
       Same height. Same weight. Different engine.<br>
       The scan is the blueprint of your factory, not a score.<br>
@@ -1327,6 +1413,12 @@ function bind() {
   });
   // Reading a report automatically is not connected yet, so a chosen file
   // gets an honest answer instead of numbers that were never on it.
+  document.querySelectorAll("[data-look]").forEach((sel) => {
+    sel.onchange = () => save({ looks: { ...looks(), [sel.getAttribute("data-look")]: sel.value } });
+  });
+  document.querySelectorAll("[data-look-skin]").forEach((btn) => {
+    btn.onclick = () => save({ looks: { ...looks(), skin: btn.getAttribute("data-look-skin") } });
+  });
   const scanFile = document.getElementById("scan-file");
   if (scanFile) scanFile.onchange = () => {
     const f = scanFile.files && scanFile.files[0];
