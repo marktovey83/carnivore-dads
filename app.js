@@ -382,11 +382,26 @@ function factory() {
    body composition report. */
 const SCAN_COUNT = 3;
 
-/* The scan reader on the Carnivore Dads server (server/ in this repo). Empty
-   until the server is deployed: the upload box then says reading is not
-   switched on, and he types the numbers. Set it to the deployed address,
-   e.g. "https://carnivore-dads-server.<account>.workers.dev/scan/read". */
-const SCAN_API = "";
+/* The scan reader on the Carnivore Dads server (server/ in this repo).
+   Test mode: it only switches on for a phone that has opened the app with
+   ?reader=on in the address (and ?reader=off turns it back off), so real
+   reports can be checked before every dad gets it. Everyone else still sees
+   "reading is not switched on" and types the numbers. To open it to all,
+   set READER_FOR_EVERYONE to true. */
+const SCAN_API_URL = "https://carnivore-dads-server.mark-c4a.workers.dev/scan/read";
+const READER_FOR_EVERYONE = false;
+const READER_ON = (() => {
+  if (READER_FOR_EVERYONE) return true;
+  try {
+    const q = new URLSearchParams(location.search).get("reader");
+    if (q === "on") localStorage.setItem("cd-reader", "on");
+    if (q === "off") localStorage.removeItem("cd-reader");
+    return localStorage.getItem("cd-reader") === "on";
+  } catch {
+    return false;
+  }
+})();
+const SCAN_API = READER_ON ? SCAN_API_URL : "";
 const SCAN_FIELDS = [
   ["height", "Height", "cm", "0.1"],
   ["weight", "Weight", "kg", "0.1"],

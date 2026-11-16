@@ -4,6 +4,9 @@
 name = "carnivore-dads-server"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
+# The server lives at <name>.<account>.workers.dev. No preview copies.
+workers_dev = true
+preview_urls = false
 
 [vars]
 # The sites allowed to call the server: the live app, and local testing.
