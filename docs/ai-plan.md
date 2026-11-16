@@ -11,7 +11,7 @@ Four features, one small server behind them all.
 | 1 | **Scan reader** | Uploads or photographs his Technogym report on the scan page. The twelve boxes fill in. He checks them and saves. | Reads the report and pulls out the twelve numbers. |
 | 2 | **Bloods reader** | Uploads his blood test, if he chooses to. Gets a Bloods page: each marker, his number, the lab's range, and what it means in factory language. | Reads the report, pulls out each marker, unit and lab range, and writes a short plain explanation. |
 | 3 | **Ask CD** | A chat button on every page, and an "Ask about this scan" button on the body scan profile. | Answers questions about the program and about his own numbers, in the CD voice, inside the education-only rules. |
-| 4 | **Body image** | A realistic picture of a body with his numbers at the top of the scan profile. | Nothing at first (see below). |
+| 4 | **Body image** | A lifelike picture made from his own scan at the top of the scan profile, a new one for each scan, so he sees Scan 1 to Scan 3 change. | Turns his scan numbers into a picture, made fresh for him. |
 
 ## The rules every AI feature follows
 
@@ -79,10 +79,17 @@ These come straight from the master map and do not bend.
 
 ## 4. Body image
 
-Start without AI:
+Made for him from his scan, every time. No stock pictures.
 
-1. **First:** a library of 20 to 30 realistic images covering body-fat levels and builds, made once and checked by you. The app picks the closest to his latest scan. No running cost, no data leaves the phone, and every image has been seen by a person.
-2. **Later, if wanted:** generate an image per dad from his numbers. This needs a separate image-generation service (Claude reads images but does not make them). It costs more per image, and the picture is still an illustration of a body with his numbers, not him. The page must say so.
+1. When he saves a scan, the app sends the CD server his scan numbers plus a few things he picks once in his profile: age range, skin tone, hair. The scan cannot tell us those.
+2. The server turns the numbers into a precise picture description: height and weight, body fat, muscle mass, waist and hip, and where the fat sits (visceral fat is fat around the middle, so a high number shows as a thicker waist and belly).
+3. An image-generation service draws him: front view, standing straight, plain background, training shorts, same lighting every time. Claude does not make images itself, so this step uses a separate service. Claude can write the description.
+4. **Same man, every scan.** Scan 2 and Scan 3 are made by changing his Scan 1 picture to the new numbers, not drawn from scratch. That way the change he sees is the change in his body, not a different person.
+5. The picture goes back to the phone and sits on the scan profile with "Made from your Scan N numbers. An illustration, not a photo." Editing a scan during its phase makes a new picture. A daily cap stops endless remakes.
+
+- **No face likeness by default.** The face is plain and turned slightly, so it is clearly him-shaped but not a photo of anyone. Using his own photo for the face is possible but means sending a photo of him to another company. It needs its own yes, and we would leave it out at first.
+- **Checking it:** before launch, run 30 to 50 sets of real scan numbers across the range (lean to heavy, short to tall, high and low visceral) and look at every picture. The things to catch: a picture that flatters or shames, a Scan 2 that looks like someone else, anything that would embarrass him if his kids saw it.
+- **Which service:** to be picked by testing two or three on the same scan numbers. The tests are realism, how well each one follows the numbers, keeping the same man across scans, and price. Prices change often, so we compare on the day.
 
 ## Privacy and consent
 
@@ -91,6 +98,7 @@ Blood results and body measurements are health information. In Australia that is
 - **One clear yes per feature,** asked the first time he uses it: what goes where, what is kept, how to say no. Saying no keeps the app working by hand.
 - **Account page update:** it currently says data is kept on the phone and nowhere else. That line changes when the first AI feature ships.
 - **Keep nothing we do not need.** The scan and bloods readers keep nothing on the server. Ask CD needs his recent questions while he is chatting; we decide how long to keep them (suggest 30 days) and say so.
+- **Body pictures:** the image service gets his scan numbers and his picked looks, never his name or email. His pictures live on his phone; to make Scan 2 look like the same man, the phone sends his Scan 1 picture along. We pick a service that does not keep the pictures or train on them, and check that in its terms.
 - **Coach access is a separate yes.**
 - **Real accounts come first** if anything is kept on the server. Login today is a demo; it would need real sign-in before the coach can see anyone's bloods.
 - **A privacy policy and a legal read** before launch. This plan is not legal advice.
@@ -103,9 +111,10 @@ Estimates at Claude Opus 5.5 list prices ($4 per million tokens in, $20 per mill
 |---|---|
 | Reading one scan report | 3 to 6 cents |
 | Reading one blood test (several pages) | 5 to 15 cents |
+| One body picture | Set by the image service we pick; compared in testing |
 | One Ask CD answer | 2 to 5 cents, with the program text cached |
 
-A dad who uploads three scans, two blood tests and asks 100 questions over the program costs roughly $3 to $6 in AI. Claude Haiku 5.5, if it reads well enough, would cut that a long way. We measure on real reports and real questions before deciding.
+A dad who uploads three scans, two blood tests and asks 100 questions over the program costs roughly $3 to $6 in Claude, plus his body pictures. Claude Haiku 5.5, if it reads well enough, would cut that a long way. We measure on real reports and real questions before deciding.
 
 ## Build order
 
@@ -114,8 +123,8 @@ A dad who uploads three scans, two blood tests and asks 100 questions over the p
 | 0 | Server, AI account and key, consent screen, Account page wording | Everything else needs these. |
 | 1 | Scan reader | Smallest, nothing kept, makes the existing upload box real. |
 | 2 | Bloods page and bloods reader | Same pipeline as scans, adds the medical-lane check. |
-| 3 | Ask CD, linked from the scan and bloods pages | Needs the scan and bloods data to be worth asking about. |
-| 4 | Body image library | Can run alongside any step; needs the images made. |
+| 3 | Body image from the scan | Builds on the scan reader; the profile picture becomes his. |
+| 4 | Ask CD, linked from the scan and bloods pages | Needs the scan and bloods data to be worth asking about. |
 | 5 | Real accounts and coach view | Only once something needs keeping on the server. |
 
 ## Decisions needed from you
@@ -125,4 +134,5 @@ A dad who uploads three scans, two blood tests and asks 100 questions over the p
 3. **Phone-only or cloud:** keep everything on the phone (no coach view of bloods), or add real accounts so the coach can see what the dad shares.
 4. **Who answers "Talk to a coach":** a person, and how quickly.
 5. **Test material:** 10 to 20 real Technogym reports and a handful of blood tests, with permission and names removed.
-6. **Legal read:** privacy policy and the Ask CD rules, before launch.
+6. **Legal read:** privacy policy, the Ask CD rules and the body pictures, before launch.
+7. **Body picture inputs:** which choices the dad makes once (age range, skin tone, hair, anything else), and whether his own photo is ever used for the face.
