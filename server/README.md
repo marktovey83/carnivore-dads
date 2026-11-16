@@ -32,11 +32,14 @@ npx wrangler secret put ANTHROPIC_API_KEY
 npx wrangler deploy
 ```
 
-`wrangler deploy` prints the server's address, like
-`https://carnivore-dads-server.<your-account>.workers.dev`. Put that address
-plus `/scan/read` into `SCAN_API` near the top of the scan section in
-`app.js`, then push. Until `SCAN_API` is set, the app tells dads that
-reading reports is not switched on and they type the numbers.
+The live server is deployed by Cloudflare from GitHub: every push to
+`main` that changes `server/` rebuilds it (root directory `server`, deploy
+command `npx wrangler deploy`). It runs at
+`https://carnivore-dads-server.mark-c4a.workers.dev`.
+
+In `app.js`, the reader is in test mode: it only switches on for a phone
+that opened the app with `?reader=on` in the address (`?reader=off` turns it
+off). Set `READER_FOR_EVERYONE` to `true` to open it to every dad.
 
 ## Checks
 
