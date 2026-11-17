@@ -1040,6 +1040,9 @@ function videos(phase) {
 
 /* When a Phase 1 reading was taken. He picks one; it is a note, not a rule. */
 const WHEN = ["Any time", "First thing", "After a sugary meal", "After a big feed", "Before bed"];
+/* How long since he last ate, picked when he logs a reading. Older readings
+   kept a "when" from WHEN instead, and still show it. */
+const SINCE_MEAL = ["Under 1 hr", "1–3 hrs", "3–6 hrs", "6–12 hrs", "12+ hrs"];
 
 /* Fuel on hand: what his latest scan says is stored in the warehouse, in
    calories, and how much of the fat packed round his organs (visceral) he
@@ -1117,12 +1120,17 @@ function readingForm() {
         <input id="mmol" inputmode="decimal" placeholder="0.0" aria-label="Your reading in mmol/L" />
         <span>mmol/L</span>
       </div>
-      <p class="field">When did you test?</p>
-      <div class="when-chips">${WHEN.map((w, i) => `<button type="button" class="chip${i === 0 ? " on" : ""}" data-when="${w}">${w}</button>`).join("")}</div>
-      <input type="hidden" id="mmol-when" value="${WHEN[0]}" />
+      <p class="field">Time since your last meal</p>
+      <div class="when-chips">${SINCE_MEAL.map((w) => `<button type="button" class="chip" data-since="${w}" aria-pressed="false">${w}</button>`).join("")}</div>
+      <input type="hidden" id="mmol-since" value="" />
       <button class="btn" style="margin-top:14px" data-act="log-ketone">SAVE READING</button>
       <p class="fine" id="mmol-msg" role="status"></p>
     </div>`;
+}
+
+function readingNote(k) {
+  if (k.sinceMeal) return `${k.sinceMeal} since a meal`;
+  return k.when || "";
 }
 
 function agoText(at) {
@@ -1151,7 +1159,7 @@ function readingRows(phase) {
   });
   return `
     <div class="card">
-      <div class="split"><strong>LATEST</strong><span class="fine">${agoText(latest.at)}${latest.when ? ` &middot; ${escapeHtml(latest.when)}` : ""}</span></div>
+      <div class="split"><strong>LATEST</strong><span class="fine">${agoText(latest.at)}${readingNote(latest) ? ` &middot; ${escapeHtml(readingNote(latest))}` : ""}</span></div>
       <div class="fuel-big"><b>${escapeHtml(latest.mmol)}</b><span>mmol/L</span></div>
       <div class="meter-scale" aria-hidden="true"><span style="left:${Math.min(100, (v / 3) * 100)}%"></span></div>
       <div class="split fine"><span>0</span><span>1.5</span><span>3+</span></div>
@@ -1161,7 +1169,7 @@ function readingRows(phase) {
     ${Object.entries(days).map(([day, ks]) => `
       <div class="reading-day">
         <p class="fine">${day}</p>
-        ${ks.map((k) => `<div class="reading"><b>${escapeHtml(k.mmol)}</b><span>${k.when ? escapeHtml(k.when) : "Any time"}</span><small>${new Date(k.at).toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" })}</small></div>`).join("")}
+        ${ks.map((k) => `<div class="reading"><b>${escapeHtml(k.mmol)}</b><span>${escapeHtml(readingNote(k) || "No meal time")}</span><small>${new Date(k.at).toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" })}</small></div>`).join("")}
       </div>`).join("")}`;
 }
 
@@ -1733,11 +1741,15 @@ function bind() {
   document.querySelectorAll("[data-scan]").forEach((el) => {
     el.addEventListener("input", () => el.classList.remove("from-report"));
   });
-  document.querySelectorAll("[data-when]").forEach((chip) => {
+  document.querySelectorAll("[data-since]").forEach((chip) => {
     chip.onclick = () => {
-      document.querySelectorAll("[data-when]").forEach((c) => c.classList.toggle("on", c === chip));
-      const h = document.getElementById("mmol-when");
-      if (h) h.value = chip.getAttribute("data-when");
+      const h = document.getElementById("mmol-since");
+      const picked = h && h.value === chip.getAttribute("data-since") ? "" : chip.getAttribute("data-since");
+      document.querySelectorAll("[data-since]").forEach((c) => {
+        c.classList.toggle("on", c === chip && !!picked);
+        c.setAttribute("aria-pressed", String(c === chip && !!picked));
+      });
+      if (h) h.value = picked;
     };
   });
   const countrySelect = document.getElementById("country");
@@ -1830,8 +1842,8 @@ function bind() {
         return;
       }
       // Readings land in the phase he is in, so the baseline stays the baseline.
-      const when = val("mmol-when");
-      save({ ketones: [...state.ketones, { mmol: String(mmol), at: Date.now(), phase: Number(state.phase) || 1, ...(when && when !== "Any time" ? { when } : {}) }] });
+      const since = val("mmol-since");
+      save({ ketones: [...state.ketones, { mmol: String(mmol), at: Date.now(), phase: Number(state.phase) || 1, ...(since ? { sinceMeal: since } : {}) }] });
     }
     if (kind === "install" && installPrompt) {
       installPrompt.prompt();
