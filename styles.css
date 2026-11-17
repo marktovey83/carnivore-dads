@@ -611,3 +611,26 @@ a.scan-card:hover { border-color: var(--ember-hot); color: var(--bone); }
 }
 .body-empty .cd-plate { width: 64px; height: 42px; }
 .body-empty p { margin: 0; max-width: 220px; }
+
+/* Ketones page: fuel on hand, the reading form, and the readings. */
+.fuel-big { display: flex; align-items: baseline; gap: 8px; margin: 8px 0 6px; }
+.fuel-big b { font-family: Anton, sans-serif; font-weight: 400; font-size: 44px; line-height: 1; color: var(--ember); }
+.fuel-big span { font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #8a8374; }
+.fuel .stat b { font-size: 30px; color: var(--ember); }
+.fuel .stat .fine { display: block; margin-top: 2px; }
+.fuel-line { font-size: 15px; line-height: 1.45; margin: 12px 0 8px; }
+.fuel-bar { height: 10px; background: #1b1b1b; border: 1px solid var(--line); }
+.fuel-bar span { display: block; height: 100%; background: var(--ember); }
+.mmol-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.mmol-row input { font-family: Anton, sans-serif; font-size: 34px; width: 140px; text-align: center; padding: 8px; }
+.mmol-row span { font-size: 14px; letter-spacing: 0.12em; color: #8a8374; }
+.when-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { background: #1b1b1b; border: 1px solid #3a372f; color: var(--bone); padding: 8px 12px; font-size: 13px; cursor: pointer; }
+.chip.on { border-color: var(--ember); color: var(--ember); }
+.meter-scale { position: relative; height: 8px; margin: 10px 0 4px; background: linear-gradient(90deg, #2a2a2a, #6b5428 50%, var(--ember)); }
+.meter-scale span { position: absolute; top: -5px; width: 4px; height: 18px; margin-left: -2px; background: var(--bone); }
+.reading-day { margin-top: 10px; }
+.reading-day > .fine { margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.1em; font-size: 11px; }
+.reading { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 10px; background: var(--plate); padding: 10px 12px; margin-bottom: 4px; }
+.reading b { font-family: Anton, sans-serif; font-weight: 400; font-size: 22px; color: var(--ember); }
+.reading small { color: #8a8374; font-size: 12px; }

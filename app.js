@@ -1041,27 +1041,127 @@ function videos(phase) {
 /* When a Phase 1 reading was taken. He picks one; it is a note, not a rule. */
 const WHEN = ["Any time", "First thing", "After a sugary meal", "After a big feed", "Before bed"];
 
-/* The meter form both phases share. */
-function readingForm() {
-  return `
-    <label class="field">Your reading (mmol/L)</label>
-    <input id="mmol" inputmode="decimal" placeholder="e.g. 0.1" />
-    <label class="field">When did you test?</label>
-    <select id="mmol-when">${WHEN.map((w) => `<option>${w}</option>`).join("")}</select>
-    <button class="btn" style="margin-top:12px" data-act="log-ketone">SAVE READING</button>
-    <p class="fine" id="mmol-msg" role="status"></p>`;
+/* Fuel on hand: what his latest scan says is stored in the warehouse, in
+   calories, and how much of the fat packed round his organs (visceral) he
+   would clear to get the level down to 5.
+
+   These are worked out here from the scan, not by AI: same answer every
+   time, instant, free, and it works with no signal. The numbers are a
+   rough guide and the page says so:
+   - Body fat is about 7,700 calories a kilo.
+   - Scanners print visceral fat as a level, not kilos. A level is about
+     10 cm2 of visceral fat on the scan's slice, and each 10 cm2 is roughly
+     a quarter of a kilo through the whole belly. So level 12 is about 3 kg. */
+const KCAL_PER_KG_FAT = 7700;
+const KG_PER_VISCERAL_LEVEL = 0.25;
+const VISCERAL_TARGET = 5;
+const DAY_KCAL = 2500; // a working dad's day, to put the totals in days
+
+function fmtNum(n) {
+  return Math.round(n).toLocaleString("en-AU");
 }
 
-/* Every reading in a phase, numbered in the order he took them. */
+function fuelCard() {
+  const last = latestScan();
+  const d = last ? last.data : null;
+  const fatKg = d ? (d.fatMass != null ? Number(d.fatMass) : d.bf != null && d.weight != null ? (Number(d.weight) * Number(d.bf)) / 100 : null) : null;
+  if (!d || (fatKg == null && d.visceral == null)) {
+    return `
+    <div class="card fuel">
+      <strong>FUEL ON HAND</strong>
+      <p class="fine">Save your body scan and this shows how much energy you are carrying in the warehouse, ready to go, and how much of the fat around your organs you are working off.</p>
+      <a class="btn ghost small" href="#/app/scan">ENTER YOUR SCAN</a>
+    </div>`;
+  }
+  const first = (state.scans || {})[1];
+  const firstVis = first && first.data.visceral != null ? Number(first.data.visceral) : null;
+  const vis = d.visceral != null ? Number(d.visceral) : null;
+  const visKg = vis != null ? vis * KG_PER_VISCERAL_LEVEL : null;
+  const extraKg = vis != null ? Math.max(0, vis - VISCERAL_TARGET) * KG_PER_VISCERAL_LEVEL : null;
+  // How far from the first scan to level 5 he has come.
+  const start = firstVis != null && firstVis > VISCERAL_TARGET ? firstVis : vis;
+  const pct = vis != null && start != null && start > VISCERAL_TARGET ? Math.min(100, Math.max(0, ((start - vis) / (start - VISCERAL_TARGET)) * 100)) : vis != null && vis <= VISCERAL_TARGET ? 100 : 0;
+  return `
+    <div class="card fuel">
+      <div class="split"><strong>FUEL ON HAND</strong><span class="fine">From Scan ${last.n}</span></div>
+      ${fatKg != null ? `
+      <div class="fuel-big">
+        <b>${fmtNum(fatKg * KCAL_PER_KG_FAT)}</b><span>calories stored</span>
+      </div>
+      <p class="fine" style="margin-top:0">${(Math.round(fatKg * 10) / 10).toLocaleString("en-AU")} kg of body fat in the warehouse. That is about <b>${fmtNum((fatKg * KCAL_PER_KG_FAT) / DAY_KCAL)} days</b> of a ${fmtNum(DAY_KCAL)}-calorie working day, already on board. When the ketone meter reads above zero, this is the fuel you are running on.</p>` : ""}
+      ${vis != null ? `
+      <div class="fuel-vis">
+        <p class="field" style="margin-top:4px">Visceral fat: around your organs</p>
+        <div class="stat-grid">
+          <div class="stat"><span class="field" style="margin:0">Your level</span><b>${escapeHtml(String(vis))}</b><span class="fine">about ${(Math.round(visKg * 10) / 10)} kg &middot; ${fmtNum(visKg * KCAL_PER_KG_FAT)} cal</span></div>
+          <div class="stat"><span class="field" style="margin:0">Aim for</span><b>${VISCERAL_TARGET}</b><span class="fine">about ${VISCERAL_TARGET * KG_PER_VISCERAL_LEVEL} kg</span></div>
+        </div>
+        ${extraKg > 0
+          ? `<p class="fuel-line">To get to level ${VISCERAL_TARGET}: about <b>${(Math.round(extraKg * 10) / 10)} kg</b> to burn, roughly <b>${fmtNum(extraKg * KCAL_PER_KG_FAT)} calories</b>. That is the fuel the factory goes after first.</p>`
+          : `<p class="fuel-line">You are at or under level ${VISCERAL_TARGET}. Keep it there.</p>`}
+        <div class="fuel-bar" role="img" aria-label="${Math.round(pct)}% of the way to level ${VISCERAL_TARGET}">
+          <span style="width:${pct}%"></span>
+        </div>
+        <div class="split fine"><span>${start != null && start > VISCERAL_TARGET ? `Level ${escapeHtml(String(start))}${firstVis != null && last.n > 1 ? " at Scan 1" : " now"}` : ""}</span><span>Level ${VISCERAL_TARGET}</span></div>
+      </div>` : ""}
+      <p class="fine">A rough guide worked out from your scan, not a measurement. Scanners give visceral fat as a level, not kilos, so the kilos and calories are estimates.</p>
+    </div>`;
+}
+
+/* The meter form both phases share. Tap when, type the number, save. */
+function readingForm() {
+  return `
+    <div class="card">
+      <strong>LOG A READING</strong>
+      <div class="mmol-row">
+        <input id="mmol" inputmode="decimal" placeholder="0.0" aria-label="Your reading in mmol/L" />
+        <span>mmol/L</span>
+      </div>
+      <p class="field">When did you test?</p>
+      <div class="when-chips">${WHEN.map((w, i) => `<button type="button" class="chip${i === 0 ? " on" : ""}" data-when="${w}">${w}</button>`).join("")}</div>
+      <input type="hidden" id="mmol-when" value="${WHEN[0]}" />
+      <button class="btn" style="margin-top:14px" data-act="log-ketone">SAVE READING</button>
+      <p class="fine" id="mmol-msg" role="status"></p>
+    </div>`;
+}
+
+function agoText(at) {
+  const m = Math.round((Date.now() - at) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} hour${h === 1 ? "" : "s"} ago`;
+  const d = Math.round(h / 24);
+  return `${d} day${d === 1 ? "" : "s"} ago`;
+}
+
+/* His readings this phase: the latest one big, on the meter's scale, then
+   the rest by day, newest first. */
 function readingRows(phase) {
   const list = readingsFor(phase);
+  if (!list.length) {
+    return `<div class="card"><p class="fine" style="margin:0">No readings yet this phase. Your first one shows up here.</p></div>`;
+  }
+  const latest = list[list.length - 1];
+  const v = Number(latest.mmol);
+  const days = {};
+  [...list].reverse().forEach((k) => {
+    const day = new Date(k.at).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+    (days[day] = days[day] || []).push(k);
+  });
   return `
-    <p class="badge" style="margin-top:16px">${list.length} LOGGED</p>
-    ${list.map((k, i) => `
-      <div class="kit-row">
-        <div class="check on">${i + 1}</div>
-        <div>${escapeHtml(k.mmol)} mmol/L${k.when ? ` · ${escapeHtml(k.when)}` : ""}<div class="fine">${new Date(k.at).toLocaleString()}</div></div>
-        <span></span>
+    <div class="card">
+      <div class="split"><strong>LATEST</strong><span class="fine">${agoText(latest.at)}${latest.when ? ` &middot; ${escapeHtml(latest.when)}` : ""}</span></div>
+      <div class="fuel-big"><b>${escapeHtml(latest.mmol)}</b><span>mmol/L</span></div>
+      <div class="meter-scale" aria-hidden="true"><span style="left:${Math.min(100, (v / 3) * 100)}%"></span></div>
+      <div class="split fine"><span>0</span><span>1.5</span><span>3+</span></div>
+      <p class="fine">${v === 0 ? "Running on sugar right now. That is the honest reading, not a fail." : "Above zero: fat is on duty right now."}</p>
+    </div>
+    <div class="split" style="margin-top:14px"><span class="field" style="margin:0">Your readings</span><span class="badge">${list.length} LOGGED</span></div>
+    ${Object.entries(days).map(([day, ks]) => `
+      <div class="reading-day">
+        <p class="fine">${day}</p>
+        ${ks.map((k) => `<div class="reading"><b>${escapeHtml(k.mmol)}</b><span>${k.when ? escapeHtml(k.when) : "Any time"}</span><small>${new Date(k.at).toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" })}</small></div>`).join("")}
       </div>`).join("")}`;
 }
 
@@ -1069,11 +1169,12 @@ function ketones(phase) {
   if (phase === 2) return phaseShell("Ketones", "ketones", phase, phase2Ketones());
   return phaseShell("Ketones", "ketones", phase, `
     <p class="lede">${phase === 1
-      ? "Your starting picture. Test whenever you like, as often as you like, on the diet you eat now. After a sugary meal. After a big feed. First thing, last thing, whenever you are curious. On the old diet the number usually sits low, around 0.0 to 0.2 mmol/L. That is not a failure. It is the honest before-photo, and the more readings you log, the sharper it gets."
+      ? "Your before-photo. Test whenever you like, as often as you like, on the food you eat now. On the old diet the meter usually sits around 0.0 to 0.2. That is not a fail: it is where you start."
       : "Your meter readings, kept in one place."}</p>
+    ${fuelCard()}
     ${readingForm()}
     ${readingRows(phase)}
-    <p class="fine">A reading is a fact about right now, not a score. The dial is a scale, not a target.</p>
+    <p class="fine">A reading is a fact about right now, not a score. The scale is a scale, not a target.</p>
     <a class="btn ghost" href="#/app/kit/ketone-meter" style="margin-top:12px;display:block">WATCH: YOUR KETONE METER</a>
   `);
 }
@@ -1336,7 +1437,8 @@ function lessonRows() {
 
 function phase2Ketones() {
   return `
-    <p class="lede">Test whenever you like, as often as you like. First thing, after a big feed, after a slip-up, before bed. There is no number to hit. Each reading shows you the factory switching fuel, and that is the whole point.</p>
+    <p class="lede">Test whenever you like, as often as you like. There is no number to hit. Each reading shows the factory switching fuel to the stock in the warehouse.</p>
+    ${fuelCard()}
     ${readingForm()}
     ${readingRows(2)}
     <p class="fine">Things that scramble a reading: ketone drinks, a big fast then a steak, a bad night, being crook, and some diabetes medicines. A reading means fat is on duty right now. Nothing more.</p>
@@ -1630,6 +1732,13 @@ function bind() {
   // A number he types over is his, not the report's.
   document.querySelectorAll("[data-scan]").forEach((el) => {
     el.addEventListener("input", () => el.classList.remove("from-report"));
+  });
+  document.querySelectorAll("[data-when]").forEach((chip) => {
+    chip.onclick = () => {
+      document.querySelectorAll("[data-when]").forEach((c) => c.classList.toggle("on", c === chip));
+      const h = document.getElementById("mmol-when");
+      if (h) h.value = chip.getAttribute("data-when");
+    };
   });
   const countrySelect = document.getElementById("country");
   if (countrySelect) countrySelect.onchange = () => save({ country: countrySelect.value });
