@@ -926,9 +926,10 @@ function mineralisedSalt() {
     `
     <p class="phase-tag">Phase 1 · The kit</p>
     <h2 class="display">MINERALISED SALT.</h2>
-    <video class="lesson-video" controls preload="metadata" playsinline
+    <video class="lesson-video upright" controls preload="metadata" playsinline
+           poster="./assets/phase1-mineralised-salt.jpg"
            src="./assets/phase1-mineralised-salt.mp4"></video>
-    <p class="fine">1:44</p>
+    <p class="fine">1:13</p>
     <p class="field">What the video covers</p>
     <ul class="points">
       <li><strong>THE PIPES</strong>Everything that comes in at the loading dock ends up in the pipes. They carry what the machines need to keep running.</li>

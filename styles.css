@@ -432,6 +432,9 @@ body.typing .tabs { display: none; }
   background: #000; border: 1px solid #2e2e2e; border-radius: 6px;
   margin: 4px 0 6px;
 }
+/* An upright (phone-shaped) film: full height of a phone screen at most,
+   centred, so it never fills the whole page. */
+.lesson-video.upright { aspect-ratio: 9 / 16; width: min(100%, 260px); margin: 4px auto 6px; }
 
 /* The website on a computer. Phones keep the app layout: one column with the
    ribbon along the bottom. From tablet width up it is a proper site: full
@@ -476,6 +479,7 @@ body.typing .tabs { display: none; }
   .tabs a.tab-hub:not(.on) { color: #8a8374; }
   body.typing .tabs { display: flex; }
   .lesson-video { max-height: 460px; background: #000; }
+  .lesson-video.upright { max-height: 600px; width: auto; }
 }
 
 /* A lesson whose video is not cut yet. Says so, rather than showing a play
