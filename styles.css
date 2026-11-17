@@ -599,3 +599,15 @@ a.scan-card:hover { border-color: var(--ember-hot); color: var(--bone); }
 .upload-box.consent { cursor: default; }
 .upload-box.busy { opacity: 0.6; pointer-events: none; }
 .scan-grid input.from-report { border-color: var(--ember); }
+
+/* The real body picture, or the frame waiting for it. */
+.body-photo { display: block; width: 100%; max-width: 320px; margin: 0 auto; aspect-ratio: 9 / 16; object-fit: cover; }
+.body-thumb img { display: block; width: 100%; aspect-ratio: 9 / 16; object-fit: cover; }
+.body-thumb.empty span { font-size: 11px; text-align: center; padding: 0 6px; }
+.body-empty {
+  display: grid; place-items: center; align-content: center; gap: 14px;
+  aspect-ratio: 9 / 16; max-height: 420px; margin: 0 auto; padding: 24px;
+  text-align: center; color: #8a8374; font-size: 14px; line-height: 1.45;
+}
+.body-empty .cd-plate { width: 64px; height: 42px; }
+.body-empty p { margin: 0; max-width: 220px; }

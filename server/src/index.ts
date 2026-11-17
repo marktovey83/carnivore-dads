@@ -1,12 +1,17 @@
-/* Carnivore Dads server. One job for now: read a body scan report.
+/* Carnivore Dads server.
 
    POST /scan/read with a form field "file" (PDF, PNG, JPEG or WebP, up to
    10 MB). Answers with the twelve scan numbers it could read, and which
    ones it could not. Nothing is stored: the file is read, sent to Claude,
-   and dropped. */
+   and dropped.
+
+   POST /body/picture with JSON { scan, looks, reference? }. Answers with a
+   lifelike picture of a man with those numbers, drawn by Gemini. Nothing is
+   stored here either: the picture goes back to his phone. */
 
 import Anthropic from "@anthropic-ai/sdk";
 import { SCAN_SCHEMA, SCAN_SYSTEM, cleanScan } from "./scan.ts";
+import { cleanPictureInput, drawPicture } from "./picture.ts";
 
 export interface Env {
   ANTHROPIC_API_KEY: string;
@@ -15,6 +20,13 @@ export interface Env {
   ALLOWED_ORIGINS: string;
   /* Cloudflare rate limit binding: caps reads per visitor. */
   SCAN_LIMIT?: RateLimit;
+  /* Google Gemini key for the body picture. A secret, like the Anthropic key. */
+  GEMINI_API_KEY?: string;
+  /* Which Gemini image model draws the picture. Set in wrangler.toml so it
+     can change without touching the code. */
+  GEMINI_IMAGE_MODEL?: string;
+  /* Caps pictures per visitor. */
+  PICTURE_LIMIT?: RateLimit;
 }
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -57,7 +69,22 @@ async function handle(req: Request, env: Env): Promise<Response> {
     // A page anyone can open to see the server is up and has its key. It
     // says whether the key is there, never what it is.
     if (url.pathname === "/health") {
-      return json(200, { ok: true, reader: "scan", key_set: Boolean(env.ANTHROPIC_API_KEY) });
+      return json(200, {
+        ok: true,
+        reader: "scan",
+        key_set: Boolean(env.ANTHROPIC_API_KEY),
+        picture_key_set: Boolean(env.GEMINI_API_KEY),
+        picture_model: env.GEMINI_IMAGE_MODEL || null,
+      });
+    }
+    // Which Gemini models on this key can draw images: names only. Used once
+    // to pick GEMINI_IMAGE_MODEL.
+    if (url.pathname === "/body/models") {
+      if (!env.GEMINI_API_KEY) return json(503, { error: "not_set_up" });
+      const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": env.GEMINI_API_KEY } });
+      const body: any = await res.json().catch(() => ({}));
+      const names = (body.models || []).map((m: any) => String(m.name || "").replace(/^models\//, "")).filter((n: string) => /image/i.test(n));
+      return json(res.ok ? 200 : 502, { models: names, status: res.status });
     }
     if (req.method === "OPTIONS") {
       return new Response(null, {
@@ -65,9 +92,34 @@ async function handle(req: Request, env: Env): Promise<Response> {
         headers: { ...cors, "Access-Control-Allow-Methods": "POST", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Max-Age": "86400" },
       });
     }
-    if (url.pathname !== "/scan/read") return json(404, { error: "not_found" });
+    if (url.pathname !== "/scan/read" && url.pathname !== "/body/picture") return json(404, { error: "not_found" });
     if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
     if (!allowed.includes(origin)) return json(403, { error: "origin_not_allowed" });
+
+    if (url.pathname === "/body/picture") {
+      if (env.PICTURE_LIMIT) {
+        const who = req.headers.get("CF-Connecting-IP") || "unknown";
+        const { success } = await env.PICTURE_LIMIT.limit({ key: who });
+        if (!success) return json(429, { error: "too_many", message: "That is a lot of pictures in a short time. Try again in a few minutes." });
+      }
+      if (!env.GEMINI_API_KEY || !env.GEMINI_IMAGE_MODEL) {
+        return json(503, { error: "not_set_up", message: "Pictures are not switched on yet." });
+      }
+      let raw: unknown;
+      try {
+        raw = await req.json();
+      } catch {
+        return json(400, { error: "bad_request", message: "Something went wrong sending your scan. Try again." });
+      }
+      const input = cleanPictureInput(raw);
+      if ("error" in input) return json(400, { error: "bad_scan", message: input.error });
+      const out = await drawPicture(input, env.GEMINI_API_KEY, env.GEMINI_IMAGE_MODEL);
+      if ("error" in out) {
+        console.error("picture failed", out.status, out.detail);
+        return json(out.status === 429 ? 503 : 502, { error: out.error, message: "Your picture could not be drawn this time. Try again in a minute.", detail: out.detail });
+      }
+      return json(200, { image: `data:${out.mimeType};base64,${out.data}` });
+    }
 
     if (env.SCAN_LIMIT) {
       const who = req.headers.get("CF-Connecting-IP") || "unknown";
