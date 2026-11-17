@@ -81,3 +81,27 @@ test("a refusal comes back as unreadable, not an error page", async () => {
     fake.restore();
   }
 });
+
+test("says the reader is not set up when the key is missing, with the CORS header", async () => {
+  const r = await worker.fetch(post(png()), { ALLOWED_ORIGINS: ORIGIN } as any);
+  assert.equal(r.status, 503);
+  assert.equal(r.headers.get("Access-Control-Allow-Origin"), ORIGIN);
+});
+
+test("health page says whether the key is set, never the key", async () => {
+  const r = await worker.fetch(new Request("https://server.example/health"), env);
+  const body: any = await r.json();
+  assert.deepEqual(body, { ok: true, reader: "scan", key_set: true });
+});
+
+test("a crash still answers with the CORS header", async () => {
+  const real = globalThis.fetch;
+  globalThis.fetch = (async () => { throw new TypeError("boom"); }) as any;
+  try {
+    const r = await worker.fetch(post(png()), env);
+    assert.ok(r.status >= 500);
+    assert.equal(r.headers.get("Access-Control-Allow-Origin"), ORIGIN);
+  } finally {
+    globalThis.fetch = real;
+  }
+});

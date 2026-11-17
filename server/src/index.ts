@@ -26,7 +26,25 @@ const TYPES: Record<string, "pdf" | "image"> = {
 };
 
 export default {
+  /* Every answer goes out with the CORS header, even a crash, so the app
+     can show what went wrong instead of "no connection". */
   async fetch(req: Request, env: Env): Promise<Response> {
+    try {
+      return await handle(req, env);
+    } catch (err) {
+      console.error("scan reader crashed", err);
+      const origin = req.headers.get("Origin") || "";
+      const ok = (env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).includes(origin);
+      return new Response(JSON.stringify({ error: "server_error", message: "The reader hit a problem. Type the numbers for now." }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...(ok ? { "Access-Control-Allow-Origin": origin, Vary: "Origin" } : {}) },
+      });
+    }
+  },
+};
+
+async function handle(req: Request, env: Env): Promise<Response> {
+  {
     const origin = req.headers.get("Origin") || "";
     const allowed = env.ALLOWED_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean);
     const cors: Record<string, string> = allowed.includes(origin)
@@ -36,6 +54,11 @@ export default {
       new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...cors } });
 
     const url = new URL(req.url);
+    // A page anyone can open to see the server is up and has its key. It
+    // says whether the key is there, never what it is.
+    if (url.pathname === "/health") {
+      return json(200, { ok: true, reader: "scan", key_set: Boolean(env.ANTHROPIC_API_KEY) });
+    }
     if (req.method === "OPTIONS") {
       return new Response(null, {
         status: allowed.includes(origin) ? 204 : 403,
@@ -64,6 +87,11 @@ export default {
     const kind = TYPES[file.type];
     if (!kind) return json(415, { error: "bad_type", message: "Send a PDF or a photo (JPG, PNG or WebP)." });
     if (file.size > MAX_BYTES) return json(413, { error: "too_big", message: "That file is over 10 MB. Try a photo of the page instead." });
+
+    if (!env.ANTHROPIC_API_KEY) {
+      console.error("ANTHROPIC_API_KEY is not set on the worker");
+      return json(503, { error: "not_set_up", message: "The reader is not set up yet. Type the numbers for now." });
+    }
 
     const data = toBase64(await file.arrayBuffer());
     const source =
@@ -110,8 +138,8 @@ export default {
       return json(422, { error: "not_a_scan", message: "That does not look like a body scan report. Check you picked the right file." });
     }
     return json(200, result);
-  },
-};
+  }
+}
 
 function toBase64(buf: ArrayBuffer): string {
   const bytes = new Uint8Array(buf);
