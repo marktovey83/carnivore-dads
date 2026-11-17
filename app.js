@@ -456,10 +456,12 @@ function metric(d, k) {
   return `<div class="metric${k === "visceral" ? " key" : ""}"><b>${shown}</b><span>${f[1]}${k === "visceral" ? " (key)" : ""}</span></div>`;
 }
 
-/* The body picture. The real one will be made by an image service from his
-   scan numbers and the looks he picks (docs/ai-plan.md). Until that is
-   connected this draws a stand-in from the same numbers, marked SAMPLE, so
-   the layout and the scan-to-scan change can be seen. */
+/* The body picture: a lifelike picture drawn by Gemini from his scan numbers
+   and the looks he picks (server/src/picture.ts). Scan 1 is drawn fresh;
+   Scan 2 and 3 are drawn from his Scan 1 picture so it stays the same man.
+   Pictures live on this phone only, in IndexedDB (too big for the app's
+   own storage). Switched on with the scan reader's test link for now. */
+const PICTURE_API_URL = SCAN_API_URL.replace(/\/scan\/read$/, "/body/picture");
 const LOOKS = {
   age: ["30s", "40s", "50s", "60s"],
   skin: [["Light", "#e6c3a5"], ["Fair", "#d4a77f"], ["Olive", "#b98a5e"], ["Brown", "#8d5a3b"], ["Dark", "#5c3a26"]],
@@ -470,69 +472,98 @@ function looks() {
   return { age: "40s", skin: "Olive", hair: "Short", ...(state.looks || {}) };
 }
 
-function bodyFigure(d, opts = {}) {
-  const bf = Math.min(40, Math.max(8, Number(d.bf) || 25));
-  const vis = Math.min(25, Math.max(1, Number(d.visceral) || 10));
-  const mus = Math.min(80, Math.max(45, Number(d.muscle) || 62));
-  const L = looks();
-  const skin = (LOOKS.skin.find((x) => x[0] === L.skin) || LOOKS.skin[2])[1];
-  const sh = 44 + (mus - 55) * 0.35; // half shoulder width
-  const ch = sh - 4; // chest
-  const wa = 24 + bf * 0.42 + vis * 0.45; // waist
-  const hi = 30 + bf * 0.28; // hips
-  const belly = vis * 1.1 + bf * 0.3;
-  const thigh = 15 + bf * 0.18;
-  const arm = 9 + (mus - 55) * 0.12 + bf * 0.06;
-  const hair = L.hair === "Shaved" ? "none" : L.hair === "Grey" ? "#9a958c" : "#2b2119";
-  const hairPath = L.hair === "Thinning" ? "M84,30 Q100,18 116,30 Q112,24 100,23 Q88,24 84,30Z" : "M81,36 Q82,14 100,14 Q118,14 119,36 Q114,24 100,24 Q86,24 81,36Z";
-  const id = opts.id || "b";
-  return `<svg viewBox="0 0 200 420" class="body-svg" role="img" aria-label="Body picture">
-    <defs>
-      <linearGradient id="${id}s" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".38"/><stop offset=".3" stop-color="#000" stop-opacity="0"/><stop offset=".7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".42"/></linearGradient>
-      <filter id="${id}f" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
-    </defs>
-    <ellipse cx="100" cy="408" rx="${hi + 18}" ry="6" fill="#000" opacity=".5"/>
-    <g fill="${skin}">
-      <path d="M${100 - sh},82 Q${100 - sh - arm},${100} ${100 - sh - arm + 2},150 L${100 - sh - arm + 6},232 Q${100 - sh - 4},242 ${100 - sh + 2},232 L${100 - sh + arm - 2},150 Q${100 - sh + 6},120 ${100 - sh + 10},96Z"/>
-      <path d="M${100 + sh},82 Q${100 + sh + arm},${100} ${100 + sh + arm - 2},150 L${100 + sh + arm - 6},232 Q${100 + sh + 4},242 ${100 + sh - 2},232 L${100 + sh - arm + 2},150 Q${100 + sh - 6},120 ${100 + sh - 10},96Z"/>
-      <rect x="91" y="56" width="18" height="22" rx="6"/>
-      <path d="M${100 - sh},80 Q100,66 ${100 + sh},80 L${100 + ch},120 Q${100 + wa + belly * 0.35},178 ${100 + wa},200 L${100 + hi},222 L${100 - hi},222 L${100 - wa},200 Q${100 - wa - belly * 0.35},178 ${100 - ch},120Z"/>
-      <path d="M${100 - hi + 2},280 L${100 - thigh - 6},392 Q${100 - thigh},402 ${100 - 6},392 L98,282Z"/>
-      <path d="M${100 + hi - 2},280 L${100 + thigh + 6},392 Q${100 + thigh},402 ${100 + 6},392 L102,282Z"/>
-      <ellipse cx="100" cy="38" rx="18" ry="23"/>
-    </g>
-    <path d="M${100 - sh},80 Q100,66 ${100 + sh},80 L${100 + ch},120 Q${100 + wa + belly * 0.35},178 ${100 + wa},200 L${100 + hi},222 L${100 - hi},222 L${100 - wa},200 Q${100 - wa - belly * 0.35},178 ${100 - ch},120Z" fill="url(#${id}s)"/>
-    <ellipse cx="100" cy="${172 + belly * 0.3}" rx="${wa * 0.78}" ry="${10 + belly * 0.9}" fill="#000" opacity="${0.06 + vis * 0.008}" filter="url(#${id}f)"/>
-    <path d="M${100 - ch + 8},112 Q${100 - 14},${124 + bf * 0.15} 98,112 M102,112 Q${100 + 14},${124 + bf * 0.15} ${100 + ch - 8},112" stroke="#000" stroke-opacity=".18" stroke-width="2" fill="none"/>
-    <path d="M${100 - hi - 2},214 L${100 + hi + 2},214 L${100 + hi + 4},284 L101,284 L100,262 L99,284 L${100 - hi - 4},284Z" fill="#1f1f1f"/>
-    <rect x="${100 - hi - 2}" y="214" width="${(hi + 2) * 2}" height="7" fill="#c9963a"/>
-    ${hair === "none" ? "" : `<path d="${hairPath}" fill="${hair}"/>`}
-    <path d="M92,48 Q100,52 108,48" stroke="#000" stroke-opacity=".25" stroke-width="1.6" fill="none"/>
-  </svg>`;
+let PICS = {}; // scan number -> { image, at, scanAt, looks }
+let picBusy = "";
+
+function picDb() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("cd-pictures", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("pics");
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function loadPics() {
+  try {
+    const db = await picDb();
+    await new Promise((resolve) => {
+      const tx = db.transaction("pics", "readonly");
+      const store = tx.objectStore("pics");
+      const keys = store.getAllKeys();
+      const vals = store.getAll();
+      tx.oncomplete = () => {
+        PICS = {};
+        keys.result.forEach((k, i) => (PICS[k] = vals.result[i]));
+        resolve();
+      };
+      tx.onerror = () => resolve();
+    });
+  } catch {
+    PICS = {};
+  }
+}
+
+async function savePic(n, pic) {
+  PICS[n] = pic;
+  try {
+    const db = await picDb();
+    db.transaction("pics", "readwrite").objectStore("pics").put(pic, n);
+  } catch {
+    // Still shown this visit; it just will not survive a reload.
+  }
+}
+
+/* A picture is out of date when the scan or his looks changed after it
+   was drawn. */
+function picStale(n) {
+  const pic = PICS[n];
+  const sc = (state.scans || {})[n];
+  if (!pic || !sc) return false;
+  return (sc.at || 0) > (pic.scanAt || 0) || JSON.stringify(pic.looks || {}) !== JSON.stringify(n === 1 ? looks() : (PICS[1] || {}).looks || pic.looks);
 }
 
 function bodyPicture(last) {
   const n = last ? last.n : 1;
+  const pic = PICS[n];
   const thumbs = Array.from({ length: SCAN_COUNT }, (_, i) => {
     const k = i + 1;
-    const sc = (state.scans || {})[k];
-    return `<div class="body-thumb${sc ? "" : " empty"}${last && k === last.n ? " on" : ""}">
-      ${sc ? bodyFigure(sc.data, { id: "t" + k }) : '<span>&mdash;</span>'}
+    const p = PICS[k];
+    return `<div class="body-thumb${p ? "" : " empty"}${last && k === last.n ? " on" : ""}">
+      ${p ? `<img src="${p.image}" alt="Your body at Scan ${k}" />` : `<span>${(state.scans || {})[k] ? "Not drawn yet" : "&mdash;"}</span>`}
       <small>Scan ${k}</small>
     </div>`;
   }).join("");
+  const frame = pic
+    ? `<img class="body-photo" src="${pic.image}" alt="Your body, drawn from your Scan ${n} numbers" />
+       <p class="body-caption">Drawn from your Scan ${n} numbers. An AI picture, not a photo.${picStale(n) ? " <b>Your scan or looks changed since: make a new one below.</b>" : ""}</p>`
+    : `<div class="body-empty">
+        <div class="cd-plate"><span>CD</span></div>
+        <p>${!last ? "Save Scan 1 and your picture is drawn from your numbers." : SCAN_API ? `Your picture is drawn from your Scan ${n} numbers. Pick your looks below, then make it.` : "Your picture is being built. It will be drawn from your own scan numbers."}</p>
+      </div>`;
   return `
-    <div class="body-frame">
-      <span class="body-tag">SAMPLE PICTURE</span>
-      ${bodyFigure(last ? last.data : {}, { id: "main" })}
-      <p class="body-caption">${last ? `Made from your Scan ${n} numbers.` : "Your picture is made from your Scan 1 numbers."} An illustration, not a photo.</p>
-    </div>
-    <div class="body-thumbs" aria-label="Your picture at each scan">${thumbs}</div>
-    <p class="fine" style="text-align:center">Same man at every scan. Scan 2 and 3 change your Scan 1 picture to the new numbers.</p>`;
+    <div class="body-frame">${frame}</div>
+    ${Object.keys(PICS).length ? `<div class="body-thumbs" aria-label="Your picture at each scan">${thumbs}</div>
+    <p class="fine" style="text-align:center">Same man at every scan. Scan 2 and 3 are drawn from your Scan 1 picture.</p>` : ""}`;
 }
 
 function looksCard() {
   const L = looks();
+  const last = latestScan();
+  const on = !!SCAN_API;
+  const consent = (state.consent || {}).picture;
+  let action;
+  if (!on) {
+    action = `<button class="btn" disabled style="margin-top:14px">MAKE MY PICTURE &middot; COMING SOON</button>`;
+  } else if (!last) {
+    action = `<button class="btn" disabled style="margin-top:14px">SAVE A SCAN FIRST</button>`;
+  } else if (!consent) {
+    action = `<p class="fine" style="margin-top:14px">To draw your picture, your scan numbers and these looks are sent to the Carnivore Dads server and to Gemini, an AI made by Google. Not your name or email. The picture comes back to this phone and is kept only here.</p>
+      <button class="btn" data-act="consent-picture">YES, DRAW MY PICTURE</button>`;
+  } else {
+    const need = picsToMake();
+    action = `<button class="btn" data-act="make-picture" style="margin-top:14px" ${picBusy || !need.length ? "disabled" : ""}>${picBusy ? "DRAWING&hellip;" : need.length ? (Object.keys(PICS).length ? "MAKE A NEW PICTURE" : "MAKE MY PICTURE") : "PICTURE UP TO DATE"}</button>`;
+  }
   return `
     <div class="card">
       <strong>YOUR LOOKS</strong>
@@ -543,9 +574,48 @@ function looksCard() {
       <div class="swatches">${LOOKS.skin.map(([name, hex]) => `<button class="swatch${name === L.skin ? " on" : ""}" style="background:${hex}" data-look-skin="${name}" aria-label="${name}" aria-pressed="${name === L.skin}"></button>`).join("")}</div>
       <label class="field" for="look-hair">Hair</label>
       <select id="look-hair" data-look="hair">${LOOKS.hair.map((h) => `<option ${h === L.hair ? "selected" : ""}>${h}</option>`).join("")}</select>
-      <button class="btn" disabled style="margin-top:14px">MAKE MY PICTURE &middot; COMING SOON</button>
-      <p class="fine">Your real picture will be drawn from your scan by an image service, once it is switched on. Until then this sample shows the layout.</p>
+      ${action}
+      <p class="fine" id="pic-msg" role="status">${picBusy}</p>
     </div>`;
+}
+
+/* Which scans need a picture: any saved scan with none, or an out-of-date
+   one. A new Scan 1 picture means the later ones are redrawn from it. */
+function picsToMake() {
+  const saved = Array.from({ length: SCAN_COUNT }, (_, i) => i + 1).filter((k) => (state.scans || {})[k]);
+  const out = saved.filter((k) => !PICS[k] || picStale(k));
+  if (out.includes(1)) return saved;
+  return out;
+}
+
+async function makePictures() {
+  const todo = picsToMake();
+  if (!todo.length || picBusy) return;
+  const setMsg = (t) => { picBusy = t; render(); };
+  try {
+    for (const n of todo) {
+      setMsg(`Drawing your Scan ${n} picture. This takes about 20 seconds.`);
+      const body = { scan: state.scans[n].data, looks: looks() };
+      if (n > 1 && PICS[1]) body.reference = PICS[1].image;
+      const res = await fetch(PICTURE_API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok || !out.image) {
+        picBusy = "";
+        render();
+        const m = document.getElementById("pic-msg");
+        if (m) m.textContent = out.message || "Your picture could not be drawn this time. Try again in a minute.";
+        return;
+      }
+      await savePic(n, { image: out.image, at: Date.now(), scanAt: state.scans[n].at || 0, looks: looks() });
+    }
+    picBusy = "";
+    render();
+  } catch {
+    picBusy = "";
+    render();
+    const m = document.getElementById("pic-msg");
+    if (m) m.textContent = "No connection to the picture maker. Try again with signal.";
+  }
 }
 
 function scanProfile() {
@@ -1593,6 +1663,10 @@ function bind() {
   document.querySelectorAll("[data-act]").forEach((act) => {
     act.onclick = () => {
     const kind = act.getAttribute("data-act");
+    if (kind === "consent-picture") {
+      save({ consent: { ...(state.consent || {}), picture: Date.now() } });
+    }
+    if (kind === "make-picture") makePictures();
     if (kind === "consent-scan") {
       save({ consent: { ...(state.consent || {}), scanReader: Date.now() } });
     }
@@ -1678,6 +1752,8 @@ function render() {
 }
 
 window.addEventListener("hashchange", render);
+// Pictures come out of IndexedDB a moment after the first draw.
+loadPics().then(() => { if (Object.keys(PICS).length) render(); });
 // Hide the tab bar while a field has focus, so the keyboard cannot push it
 // over the box he is typing in. Then bring the field into view above it.
 const isField = (el) => el && /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName) && el.type !== "file";

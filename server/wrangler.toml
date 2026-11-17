@@ -11,6 +11,9 @@ preview_urls = false
 [vars]
 # The sites allowed to call the server: the live app, and local testing.
 ALLOWED_ORIGINS = "https://marktovey83.github.io,http://localhost:5173,http://localhost:8123"
+# The Gemini model that draws the body picture. Blank until checked against
+# /body/models with the real key. The key itself is a secret: GEMINI_API_KEY.
+GEMINI_IMAGE_MODEL = ""
 
 # At most 6 report reads a minute from one connection.
 [[ratelimits]]
@@ -18,4 +21,12 @@ name = "SCAN_LIMIT"
 namespace_id = "1001"
   [ratelimits.simple]
   limit = 6
+  period = 60
+
+# At most 3 body pictures a minute from one connection.
+[[ratelimits]]
+name = "PICTURE_LIMIT"
+namespace_id = "1002"
+  [ratelimits.simple]
+  limit = 3
   period = 60

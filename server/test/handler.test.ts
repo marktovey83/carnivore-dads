@@ -91,7 +91,7 @@ test("says the reader is not set up when the key is missing, with the CORS heade
 test("health page says whether the key is set, never the key", async () => {
   const r = await worker.fetch(new Request("https://server.example/health"), env);
   const body: any = await r.json();
-  assert.deepEqual(body, { ok: true, reader: "scan", key_set: true });
+  assert.deepEqual(body, { ok: true, reader: "scan", key_set: true, picture_key_set: false, picture_model: null });
 });
 
 test("a crash still answers with the CORS header", async () => {

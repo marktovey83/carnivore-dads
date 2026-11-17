@@ -41,6 +41,22 @@ In `app.js`, the reader is in test mode: it only switches on for a phone
 that opened the app with `?reader=on` in the address (`?reader=off` turns it
 off). Set `READER_FOR_EVERYONE` to `true` to open it to every dad.
 
+## Body picture
+
+`POST /body/picture` with JSON `{ scan, looks, reference? }` draws a
+lifelike picture of a man with those scan numbers using Google's Gemini
+image model, and sends it back as a data URL. `reference` is his Scan 1
+picture, so Scan 2 and 3 stay the same man. Nothing is stored on the server;
+the app keeps pictures on the phone.
+
+It needs two things in Cloudflare:
+
+- Secret `GEMINI_API_KEY` (Settings, Variables and Secrets, type Secret).
+- `GEMINI_IMAGE_MODEL` in `wrangler.toml`. Open `/body/models` once the key is
+  in to see which image models the key can use.
+
+`/health` shows `picture_key_set` and `picture_model`.
+
 ## Checks
 
 ```bash
